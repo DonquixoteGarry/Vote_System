@@ -51,7 +51,7 @@ print(net)
 params = list(net.parameters())
 print(len(params))
 print(params[0].size())
-# params是参数列表,下标[0,2,4,6,8]代表[conv1,conv2,fc1,fc2,fc3]的参数集
+# params是参数列表,下标[0,2,4,6,8]可能代表[conv1,conv2,fc1,fc2,fc3]的参数集
 # 下标[1,3,5,7,9]可能表示各层间ReLU激活函数的参数集
 
 input = torch.randn(1, 1, 32, 32)
