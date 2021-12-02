@@ -51,7 +51,8 @@ print(net)
 params = list(net.parameters())
 print(len(params))
 print(params[0].size())
-# params是参数列表,下标[0,2,4,6,8]可能代表[conv1,conv2,fc1,fc2,fc3]的参数集
+# params是参数列表,以下是猜测
+# 下标[0,2,4,6,8]可能代表[conv1,conv2,fc1,fc2,fc3]的参数集
 # 下标[1,3,5,7,9]可能表示各层间ReLU激活函数的参数集
 
 input = torch.randn(1, 1, 32, 32)
@@ -71,3 +72,42 @@ loss = criterion(output, target)
 print(loss)
 # 创建随机张量target并将其降维,使target和output同size
 # 使用MSELoss计算损失函数(output为预测结果,target视为真实label)
+
+print(loss.grad_fn)  # MSELoss
+print(loss.grad_fn.next_functions[0][0])  # Linear
+print(loss.grad_fn.next_functions[0][0].next_functions[0][0])  # ReLU
+# 通过上述的语句,可以以逆推的顺序,依次打印计算图中loss的前节点的对象
+# 实际存在以下的计算图
+# input -> conv2d -> relu -> maxpool2d -> conv2d -> relu -> maxpool2d
+#       -> view -> linear -> relu -> linear -> relu -> linear
+#       -> MSELoss
+#       -> loss
+
+net.zero_grad()
+print('conv1.bias.grad before backward')
+print(net.conv1.bias.grad)
+loss.backward()
+print('conv1.bias.grad after backward')
+print(net.conv1.bias.grad)
+# 先清空梯度,打印conv1层的偏移量(bias)梯度,此时是空的
+# 然后从loss逆向传播梯度,打印conv1层的偏移量梯度,此时不为空
+
+
+# 以下使用w*=w-η*grad公式模拟梯度下降法更新参数(η即学习率)
+learning_rate = 0.01
+for f in net.parameters():
+    f.data.sub_(f.grad.data * learning_rate)
+
+# 以下使用优化器实现梯度下降法
+# 1.为优化器依次指定学习率和神经网络,
+# 2.清空梯度
+# 3.通过神经网络正向传播
+# 4.通过损失函数逆向传播梯度
+# 5.优化器运行步进
+import torch.optim as optim
+optimizer = optim.SGD(net.parameters(), lr=0.01)
+optimizer.zero_grad()
+output = net(input)
+loss = criterion(output, target)
+loss.backward()
+optimizer.step()
