@@ -1,5 +1,6 @@
 SHELL=cmd.exe
 cs:
-	python csvwriting.py
+	python csvwrite.py
+	rmdir /S /Q data
 gp:
 	python gputest.py
