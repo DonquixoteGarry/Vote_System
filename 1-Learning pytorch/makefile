@@ -8,6 +8,7 @@ cl:
 nn:
 	python nn.py
 gp:
+	cls
 	python gpurun.py
 	rmdir /S /Q data\cifar-10-batches-py
 clean:

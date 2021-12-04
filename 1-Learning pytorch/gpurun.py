@@ -1,11 +1,7 @@
 import torch
-import torchvision
 import torchvision.transforms as transforms
 import torch.utils.data as data
-import torchvision.utils as utils
 import torchvision.datasets as datasets
-import matplotlib.pyplot as plt
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as func
 import torch.optim as optim
@@ -15,12 +11,16 @@ class Net(nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
+        # self.conv1 = nn.Conv2d(3, 6, 5)
+        self.conv1 = nn.Conv2d(3, 300, 5)
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
+        # self.conv2 = nn.Conv2d(6, 16, 5)
+        self.conv2 = nn.Conv2d(300, 16, 5)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
+        # 将上述参数(conv1第二个参数,conv2第一个参数) 6->300
+        # 扩大网络大小后GPU加速效果好
 
     def forward(self, x):
         x = self.pool(func.relu(self.conv1(x)))
@@ -45,22 +45,6 @@ classes = ('plane', 'car', 'bird', 'cat','deer', 'dog', 'frog', 'horse', 'ship',
 # 上述代码功能是设定数据集转换函数
 # 转换函数transform1来自torchvision.transforms函数,并进行归一化(Normalize)
 # 然后下载、转换和装载 CIFAR10 数据集的训练集和测试集
-
-
-def imshow(img):
-    img = img / 2 + 0.5     # unnormalize
-    npimg = img.numpy()
-    plt.imshow(np.transpose(npimg, (1, 2, 0)))
-    plt.show()
-# 定义输出图片的函数imshow
-# 先将图像去归一化,转化为numpy格式,并使用写在画布上并显示
-
-dataiter = iter(trainloader)
-images, labels = dataiter.next()
-imshow(utils.make_grid(images))
-print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
-# 使用iter迭代器从训练集随机取出一个对象
-# 将图像使用make_grid网格化拼接并打印对应标签
 
 net = Net()
 criterion = nn.CrossEntropyLoss()
@@ -93,7 +77,7 @@ print('Finished Training! CPU Total cost time: ', time.time() - start)
 ### 以下是GPU模式训练(未数据并行,效率不高)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
+print("GPU device:",device)
 net.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
