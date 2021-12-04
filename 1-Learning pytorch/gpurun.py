@@ -11,16 +11,15 @@ class Net(nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-        # self.conv1 = nn.Conv2d(3, 6, 5)
         self.conv1 = nn.Conv2d(3, 300, 5)
         self.pool = nn.MaxPool2d(2, 2)
-        # self.conv2 = nn.Conv2d(6, 16, 5)
         self.conv2 = nn.Conv2d(300, 16, 5)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
-        # 将上述参数(conv1第二个参数,conv2第一个参数) 6->300
-        # 扩大网络大小后GPU加速效果好
+        # 调整参数扩大神经网络规模后GPU加速效果好
+        # 可调整conv1第二个参数,conv2第一个参数(要求这两个参数相等)
+        # CPU:400秒级,GPU:100秒级
 
     def forward(self, x):
         x = self.pool(func.relu(self.conv1(x)))
