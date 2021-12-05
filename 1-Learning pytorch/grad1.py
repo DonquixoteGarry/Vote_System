@@ -103,7 +103,7 @@ print(f'Result:\n y = {a.item()} + {b.item()} x + {c.item()} x^2 + {d.item()} x^
 
 ###########################################################
 # 编写function类的方式实现自定义autograd
-# 其余功能类似
+# 使用勒让德式的参数表示拟合曲线
 
 class LegendrePolynomial3(torch.autograd.Function):
     @staticmethod
