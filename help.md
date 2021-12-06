@@ -3,12 +3,12 @@
 首先建立环境并进入,环境名`d2l`
 
 ```python
-conda create --name 名字 python=3.8
-conda activate 名字
-conda remove -n 名字 --all
+conda create --name 环境名 python=3.8
+conda activate 环境名
+conda remove -n 环境名 --all
 ```
 
-由于本机为`CUDA11.3`,在`PyTorch`官网`https://pytorch.org/`查询得知命令
+由于本机为`CUDA11.3`,在`PyTorch`官网 `https://pytorch.org/` 查询得知命令
 
 ```python
 conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
@@ -67,7 +67,7 @@ conda activate d2l
 pip install IPython d2l
 ```
 
-> 代码的运行
+> jupyter notebook 下代码的运行
 
 代码一般在`jupyter notebook`中运行
 
@@ -91,4 +91,19 @@ jupyter notebook
 # 之后只需在jupyter notebook服务时点击.ipynb文件即可进入特殊界面
 # 特殊界面记录每次运行的信息
 ```
-
+> `conda` 环境打包和克隆
+```shell
+conda install conda-pack
+# 下载打包器
+conda pack -n 环境名
+# 将该环境以tar.gz压缩包的形式打包到当前路径下
+mkdir -p 环境名
+tar -xzf 环境名.tar.gz -C 环境名
+# 压缩包解压到当前新建文件夹
+source 环境名/bin/activate
+# 激活环境
+conda create -n 环境名2 --clone 环境名1 
+# 克隆环境1
+conda create -n 环境名2 --clone D:\环境名1 
+# 克隆指定路径的环境1
+```
