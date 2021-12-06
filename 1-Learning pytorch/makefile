@@ -1,4 +1,9 @@
 SHELL=cmd.exe
+clean:
+	del *.exe
+	rmdir /S /Q data\cifar-10-batches-py
+	cls
+
 au:
 	python autograd.py
 cp:
@@ -17,7 +22,7 @@ g1:
 g2:
 	cls
 	python grad2.py
-clean:
-	del *.exe
-	rmdir /S /Q data\cifar-10-batches-py
+mn:
+	cls
+	python mnist_nn.py
 	cls

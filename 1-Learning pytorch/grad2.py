@@ -108,6 +108,7 @@ print(f'Result: {model.string()}')
 
 #########################################################
 # 编写nn.module类的方式实现自定义模型
+# 并且实现控制流与权重共享
 # 使用三次函数拟合曲线
 class DynamicNet(torch.nn.Module):
     def __init__(self):
@@ -122,7 +123,7 @@ class DynamicNet(torch.nn.Module):
         for exp in range(4, random.randint(4, 6)):
             y = y + self.e * x ** exp
         return y
-    # 疑惑?
+    # 疑惑?什么是并且实现控制流与权重共享?
     # 正向传递中,通过e参数的重用,使得形成计算图
     # 多余的参数e也用以衡量各个阶数(0,1,2,3,4,5)的权重贡献
     def string(self):
