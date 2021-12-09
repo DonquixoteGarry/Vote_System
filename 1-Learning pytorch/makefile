@@ -1,7 +1,7 @@
 SHELL=cmd.exe
 clean:
 	del *.exe
-	rmdir /S /Q data\cifar-10-batches-py
+	rmdir /S /Q data\cifar-10-batches-py runs
 	cls
 
 au:
@@ -22,7 +22,14 @@ g1:
 g2:
 	cls
 	python grad2.py
-mn:
+tu:
 	cls
-	python mnist_nn.py
+	echo .. open following URL and read it with notebook
+	echo https://pytorch.apachecn.org/#/docs/1.7/16
+	jupyter notebook
+te:
 	cls
+	rmdir /S /Q runs
+	echo tensorboard --logdir=runs
+	echo https://pytorch.apachecn.org/#/docs/1.7/17
+	jupyter notebook
