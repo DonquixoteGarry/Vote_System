@@ -125,6 +125,7 @@ def main():
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-50:])
 
     # define training and validation data loaders
+    # change batches from 2 to 1 
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=1, shuffle=True, num_workers=1,
         collate_fn=utils.collate_fn)
@@ -149,6 +150,7 @@ def main():
                                                    gamma=0.1)
 
     # let's train it for 10 epochs
+    # there change to 2 epochs, because GPU's Memory is limited
     num_epochs = 2
 
     for epoch in range(num_epochs):
