@@ -1,3 +1,5 @@
 /.idea
 /1-Learning pytorch/data
 /1-Learning pytorch/cifar_net.pth
+/2-Picture and Video/4-DCGAN教程/data
+/2-Picture and Video/4-DCGAN教程/img_align_celeba.zip
