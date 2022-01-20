@@ -66,5 +66,5 @@ for param in model.parameters():
 # 遍历模型参数,禁用(冻结)模型所有参数的梯度,将其排除出梯度计算
 model.fc = nn.Linear(512, 10)
 optimizer = optim.SGD(model.fc.parameters(), lr=1e-2, momentum=0.9)
-# 将模型的分类器层(fc)替换为一个使用Linear函数初始化的矩阵
+# 确定模型全连接层为特定规模的线性层
 # 因为已冻结神经网络的其他参数,故优化器仅优化分类器层的参数
