@@ -361,7 +361,7 @@ Discriminator(
 
 ![](img/tex22-2.gif)
 
-请注意，此函数如何提供目标函数中两个对数分量的计算（即`log D(x)`和`log(1 - D(G(z)))`）。 我们可以指定`y`输入使用 BCE 方程的哪一部分。 这是在即将到来的训练循环中完成的，但重要的是要了解我们如何仅通过更改`y`（即`GT`标签）即可选择希望计算的分量。
+请注意，此函数如何提供目标函数中两个对数分量的计算（即`log D(x)`和`log(1 - D(G(z)))`）。 我们可以指定`y`输入使用 BCE 方程的哪一部分。 这是在即将到来的训练循环中完成的，但重要的是要了解我们如何仅通过更改`y`（即`GT`,`Ground-Truth`标签,地面真实标签,指不经预测的,事实上的,真实标签,是预测的评判标准）即可选择希望计算的分量。
 
 接下来，我们将实际标签定义为 1，将假标签定义为 0。这些标签将在计算`D`和`G`的损失时使用，这也是 GAN 原始论文中使用的惯例 。 最后，我们设置了两个单独的优化器，一个用于`D`，另一个用于`G`。 如 DCGAN 论文中所指定，这两个都是学习速度为 0.0002 和`Beta1 = 0.5`的 Adam 优化器。 为了跟踪生成器的学习进度，我们将生成一批固定的潜在向量，这些向量是从正态(高斯)分布（即`fixed_noise`）中提取的。 在训练循环中，我们将定期将此`fixed_noise`输入到`G`中，并且在迭代过程中，我们将看到图像形成于噪声之外。
 
@@ -373,7 +373,8 @@ criterion = nn.BCELoss()
 # Create batch of latent vectors that we will use to visualize
 #  the progression of the generator
 fixed_noise = torch.randn(64, nz, 1, 1, device=device)
-# 将批量的潜向量,即噪音,可视化为一个随机张量作为输入
+# 将批量的潜向量,即噪音,可视化为一个随机张量
+# 四维张量,维度为64*nz*1*1
 
 # Establish convention for real and fake labels during training
 real_label = 1.
@@ -385,7 +386,7 @@ optimizerD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
 optimizerG = optim.Adam(netG.parameters(), lr=lr, betas=(beta1, 0.999))
 # 使用Adam优化器
 # 生成器G :使用随机张量(噪音)生成伪造图
-# 判别器D :判定伪造图的真实值数(0为假,1为真)
+# 判别器D :判定伪造图的真实值数(或称概率0为假,1为真)
 
 
 ```
@@ -423,70 +424,62 @@ iters = 0
 print("Starting Training Loop...")
 # For each epoch
 for epoch in range(num_epochs):
-    # For each batch in the dataloader
-    for i, data in enumerate(dataloader, 0):
-
-        ############################
-        # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-        ###########################
-        ## Train with all-real batch
+    for i, data in enumerate(dataloader, 0):    
+        ### 在判别器D的网络中最大化损失函数= log D(x) + log(1 - D(G(z))
         netD.zero_grad()
-        # Format batch
+        ## 如下是判别器D的全真样本批量训练
+        # 规定批量格式
         real_cpu = data[0].to(device)
         b_size = real_cpu.size(0)
         label = torch.full((b_size,), real_label, dtype=torch.float, device=device)
-        # Forward pass real batch through D
+        # 神经网络正向传播,求取损失函数
         output = netD(real_cpu).view(-1)
-        # Calculate loss on all-real batch
         errD_real = criterion(output, label)
-        # Calculate gradients for D in backward pass
+        # 梯度反向传播
         errD_real.backward()
         D_x = output.mean().item()
-
-        ## Train with all-fake batch
-        # Generate batch of latent vectors
+        ## 如下是判别器D的全假样本批量训练
+        # 生成随机的噪音(正态高斯分布的潜向量)
         noise = torch.randn(b_size, nz, 1, 1, device=device)
-        # Generate fake image batch with G
+        # 由生成器通过噪音产生假图样本并标记为假
         fake = netG(noise)
         label.fill_(fake_label)
-        # Classify all fake batch with D
+        # 使用判别器D判别所有的全假样本,但detach()使假图样本fake不具有梯度!!!!
         output = netD(fake.detach()).view(-1)
-        # Calculate D's loss on the all-fake batch
+        # 并计算损失函数,梯度反向传播
         errD_fake = criterion(output, label)
-        # Calculate the gradients for this batch
         errD_fake.backward()
+        # D_G_z1即在输入样本fake无梯度时D(G(z))的均值
         D_G_z1 = output.mean().item()
-        # Add the gradients from the all-real and all-fake batches
+        # 设定总损失函数,使用设定好参数的Adam优化器开始步进
         errD = errD_real + errD_fake
-        # Update D
         optimizerD.step()
 
-        ############################
-        # (2) Update G network: maximize log(D(G(z)))
-        ###########################
+        ### 在判别器G的网络中最大化损失函数= log(D(G(z))
         netG.zero_grad()
         label.fill_(real_label)  # fake labels are real for generator cost
-        # Since we just updated D, perform another forward pass of all-fake batch through D
+        # 使用全假样本(上面由高斯噪声通过生成器G得到)输入已更新参数的判别器D,进行正向传播
         output = netD(fake).view(-1)
-        # Calculate G's loss based on this output
+        # 计算损失函数,梯度反向传播
         errG = criterion(output, label)
-        # Calculate gradients for G
         errG.backward()
+        # D_G_z2即在输入样本fake梯度时D(G(z))的均值
         D_G_z2 = output.mean().item()
-        # Update G
+        
+        # 设定总损失函数,使用设定好参数的Adam优化器开始步进
         optimizerG.step()
 
-        # Output training stats
+        # 每个batch进行一次损失统计
         if i % 50 == 0:
             print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
                   % (epoch, num_epochs, i, len(dataloader),
                      errD.item(), errG.item(), D_x, D_G_z1, D_G_z2))
 
-        # Save Losses for plotting later
+        # 为绘图保存损失函数值
         G_losses.append(errG.item())
         D_losses.append(errD.item())
 
-        # Check how the generator is doing by saving G's output on fixed_noise
+        # 检查生成器G如何保存通过高斯噪声得到的输出(即假图)
         if (iters % 500 == 0) or ((epoch == num_epochs-1) and (i == len(dataloader)-1)):
             with torch.no_grad():
                 fake = netG(fixed_noise).detach().cpu()
@@ -498,7 +491,7 @@ for epoch in range(num_epochs):
 
 出：
 
-```py
+```python
 Starting Training Loop...
 [0/5][0/1583]   Loss_D: 1.9847  Loss_G: 5.5914  D(x): 0.6004    D(G(z)): 0.6680 / 0.0062
 [0/5][50/1583]  Loss_D: 0.7168  Loss_G: 35.7954 D(x): 0.7127    D(G(z)): 0.0000 / 0.0000
