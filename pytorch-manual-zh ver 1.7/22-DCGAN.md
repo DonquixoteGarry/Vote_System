@@ -12,11 +12,11 @@
 
 ### 什么是 GAN？
 
-GAN 是用于教授 DL 模型以捕获训练数据分布的框架，因此我们可以从同一分布中生成新数据。 GAN 由 Ian Goodfellow 于 2014 年发明，并在论文[《生成对抗网络》](https://papers.nips.cc/paper/5423-generative-adversarial-nets.pdf)中首次进行了描述。 它们由两个不同的模型组成：*生成器*和*判别器*。 生成器的工作是生成看起来像训练图像的“假”图像。 判别器的工作是查看图像并从生成器输出它是真实的训练图像还是伪图像。 在训练过程中，生成器不断尝试通过生成越来越好的伪造品而使判别器的表现超过智者，而判别器正在努力成为更好的侦探并正确地对真实和伪造图像进行分类。 博弈的平衡点是当生成器生成的伪造品看起来像直接来自训练数据时，而判别器则总是在 50% 置信度条件下猜测生成器输出是真实还是伪造品的。
+生成对抗网络(GAN,Generative Adversarial Networks)是用于教授 DL 模型以捕获训练数据分布的框架，因此我们可以从同一分布中生成新数据。 GAN 由 Ian Goodfellow 于 2014 年发明，并在论文[《生成对抗网络》](https://papers.nips.cc/paper/5423-generative-adversarial-nets.pdf)中首次进行了描述。 它们由两个不同的模型组成：*生成器*和*判别器*。 生成器的工作是生成看起来像训练图像的“假”图像。 判别器的工作是查看图像并从生成器输出它是真实的训练图像还是伪图像。 在训练过程中，生成器不断尝试通过生成越来越好的伪造品而使判别器的表现超过智者，而判别器正在努力成为更好的侦探并正确地对真实和伪造图像进行分类。 博弈的平衡点是当生成器生成的伪造品看起来像直接来自训练数据时，而判别器则总是在 50% 置信度条件下猜测生成器输出是真实还是伪造品的。
 
-现在，让我们从判别器开始定义一些在整个教程中使用的符号。 令`x`为代表图像的数据。 `D(x)`是判别器网络，`D(x)`的输出是`x`来自训练数据而不是生成器的（标量）概率。 在这里，由于我们要处理图像，因此`D(x)`的输入是 CHW 大小为`3x64x64`的图像。 直观地，当`x`来自训练数据时，`D(x)`应该为高，而当`x`来自生成器时，它应该为低。 `D(x)`也可以被认为是传统的二分类器。
+现在，让我们从判别器开始定义一些在整个教程中使用的符号。 令`x`为代表图像的数据。 `D(x)`是判别器(Discriminator)网络，`D(x)`的输出是`x`来自训练数据而不是生成器的（标量）概率。 在这里，由于我们要处理图像，因此`D(x)`的输入是CHW(Channel,Height,Width)大小为`3x64x64`的图像。 直观地，当`x`来自训练数据时，`D(x)`应该为高，而当`x`来自生成器时，它应该为低。 `D(x)`也可以被认为是传统的二分类器。
 
-对于生成器的表示法，令`z`是从标准正态分布中采样的潜在空间向量。 `G(z)`表示将隐向量`z`映射到数据空间的生成器函数。 `G`的目标是估计训练数据来自`p_data`的分布，以便它可以从该估计分布（`p_g`）生成假样本。
+对于生成器(Generator)的表示法，令`z`是从标准正态分布中采样的潜在空间向量。 `G(z)`表示将隐向量`z`映射到数据空间的生成器函数。 `G`的目标是估计训练数据来自`p_data`的分布，以便它可以从该估计分布（`p_g`）生成假样本。
 
 因此，`D(G(z))`是生成器`G`的输出是真实图像的概率（标量）。 如 [Goodfellow 的论文](https://papers.nips.cc/paper/5423-generative-adversarial-nets.pdf)中所述，`D`和`G`玩一个 minimax 游戏，其中`D`试图最大化其正确分类实物和假物`log D(x)`，并且`G`尝试最小化`D`预测其输出为假的概率`log(1 - D(G(g(x))))`。 从本文来看，GAN 损失函数为
 
@@ -26,7 +26,7 @@ GAN 是用于教授 DL 模型以捕获训练数据分布的框架，因此我们
 
 ### 什么是 DCGAN？
 
-DCGAN 是上述 GAN 的直接扩展，不同之处在于，DCGAN 分别在判别器和生成器中分别使用卷积和卷积转置层。 它最早由 Radford 等人，在论文[《使用深度卷积生成对抗网络的无监督表示学习》](https://arxiv.org/pdf/1511.06434.pdf)中描述。 判别器由分层的[卷积层](https://pytorch.org/docs/stable/nn.html#torch.nn.Conv2d)，[批量规范层](https://pytorch.org/docs/stable/nn.html#torch.nn.BatchNorm2d)和 [LeakyReLU](https://pytorch.org/docs/stable/nn.html#torch.nn.LeakyReLU) 激活组成。 输入是`3x64x64`的输入图像，输出是输入来自真实数据分布的标量概率。 生成器由[转置卷积层](https://pytorch.org/docs/stable/nn.html#torch.nn.ConvTranspose2d)，批量规范层和 [ReLU](https://pytorch.org/docs/stable/nn.html#relu) 激活组成。 输入是从标准正态分布中提取的潜向量`z`，输出是`3x64x64` RGB 图像。 跨步的转置层使潜向量可以转换为具有与图像相同形状的体积。 在本文中，作者还提供了一些有关如何设置优化器，如何计算损失函数以及如何初始化模型权重的提示，所有这些都将在接下来的部分中进行解释。
+深度卷积生成对抗网络(DCGAN,Deep convolutional Generative Adversarial Networks) 是上述 GAN 的直接扩展，不同之处在于，DCGAN 分别在判别器和生成器中分别使用卷积和卷积转置层。 它最早由 Radford 等人，在论文[《使用深度卷积生成对抗网络的无监督表示学习》](https://arxiv.org/pdf/1511.06434.pdf)中描述。 判别器由分层的[卷积层](https://pytorch.org/docs/stable/nn.html#torch.nn.Conv2d)，[批量规范层](https://pytorch.org/docs/stable/nn.html#torch.nn.BatchNorm2d)和 [LeakyReLU](https://pytorch.org/docs/stable/nn.html#torch.nn.LeakyReLU) 激活组成。 输入是`3x64x64`的输入图像，输出是输入来自真实数据分布的标量概率。 生成器由[转置卷积层](https://pytorch.org/docs/stable/nn.html#torch.nn.ConvTranspose2d)，批量规范层和 [ReLU](https://pytorch.org/docs/stable/nn.html#relu) 激活组成。 输入是从标准正态分布中提取的潜向量`z`，输出是`3x64x64` RGB 图像。 跨步的转置层使潜向量可以转换为具有与图像相同形状的体积。 在本文中，作者还提供了一些有关如何设置优化器，如何计算损失函数以及如何初始化模型权重的提示，所有这些都将在接下来的部分中进行解释。
 
 ```py
 from __future__ import print_function
@@ -179,8 +179,10 @@ plt.imshow(np.transpose(vutils.make_grid(real_batch[0].to(device)[:64], padding=
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
+    # conv即卷积层
         nn.init.normal_(m.weight.data, 0.0, 0.02)
     elif classname.find('BatchNorm') != -1:
+    # batchnorm即批量归一层
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
 
@@ -188,7 +190,7 @@ def weights_init(m):
 
 ### 生成器
 
-生成器`G`用于将潜在空间向量（`z`）映射到数据空间。 由于我们的数据是图像，因此将`z`转换为数据空间意味着最终创建与训练图像大小相同的 RGB 图像（即`3x64x64`）。 在实践中，这是通过一系列跨步的二维卷积转置层来完成的，每个层都与 2d 批量规范层和 relu 激活配对。 生成器的输出通过 tanh 函数馈送，以使其返回到输入数据范围`[-1,1]`。 值得注意的是，在卷积转置层之后存在批量规范函数，因为这是 DCGAN 论文的关键贡献。 这些层有助于训练过程中的梯度流动。 DCGAN 纸生成的图像如下所示。
+生成器`G`用于将潜在空间向量（`z`）映射到数据空间。 由于我们的数据是图像，因此将`z`转换为数据空间意味着最终创建与训练图像大小相同的 RGB 图像（即`3x64x64`）。 在实践中，这是通过一系列跨步的二维卷积(即conv2d)转置层来完成的，每个层都与 2d 批量规范层和 relu 激活配对。 生成器的输出通过 tanh 函数馈送，以使其返回到输入数据范围`[-1,1]`。 值得注意的是，在卷积转置层之后存在批量规范函数，因为这是 DCGAN 论文的关键贡献。 这些层有助于训练过程中的梯度流动。 DCGAN 纸生成的图像如下所示。
 
 ![dcgan_generator](img/85974d98be6202902f21ce274418953f.png)
 
@@ -226,7 +228,8 @@ class Generator(nn.Module):
 
     def forward(self, input):
         return self.main(input)
-
+# 除最后一层特殊层为"2d卷积转置+tanh函数"外,
+# 其余都是"2d卷积转置+批量归一化+ReLu激活函数"的一般层
 ```
 
 现在，我们可以实例化生成器并应用`weights_init`函数。 签出打印的模型以查看生成器对象的结构。
@@ -234,18 +237,17 @@ class Generator(nn.Module):
 ```py
 # Create the generator
 netG = Generator(ngpu).to(device)
-
 # Handle multi-gpu if desired
 if (device.type == 'cuda') and (ngpu > 1):
     netG = nn.DataParallel(netG, list(range(ngpu)))
+# 生成器DNN模型放进gpu,并考虑多gpu并行
 
 # Apply the weights_init function to randomly initialize all weights
 #  to mean=0, stdev=0.2.
 netG.apply(weights_init)
-
 # Print the model
 print(netG)
-
+# 使用函数weights_init初始化生成器DNN模型的参数并打印
 ```
 
 出：
@@ -306,7 +308,9 @@ class Discriminator(nn.Module):
 
     def forward(self, input):
         return self.main(input)
-
+# 第一层是"2d卷积+LeakyReLu激活函数"
+# 最后一层特殊层为"2d卷积转置+sigmoid函数"外,
+# 其余都是"2d卷积转置+批量归一化+LeakyReLu激活"的一般层
 ```
 
 现在，与生成器一样，我们可以创建判别器，应用`weights_init`函数，并打印模型的结构。
@@ -325,7 +329,7 @@ netD.apply(weights_init)
 
 # Print the model
 print(netD)
-
+# 同上对生成器的处理
 ```
 
 出：
@@ -359,23 +363,30 @@ Discriminator(
 
 请注意，此函数如何提供目标函数中两个对数分量的计算（即`log D(x)`和`log(1 - D(G(z)))`）。 我们可以指定`y`输入使用 BCE 方程的哪一部分。 这是在即将到来的训练循环中完成的，但重要的是要了解我们如何仅通过更改`y`（即`GT`标签）即可选择希望计算的分量。
 
-接下来，我们将实际标签定义为 1，将假标签定义为 0。这些标签将在计算`D`和`G`的损失时使用，这也是 GAN 原始论文中使用的惯例 。 最后，我们设置了两个单独的优化器，一个用于`D`，另一个用于`G`。 如 DCGAN 论文中所指定，这两个都是学习速度为 0.0002 和`Beta1 = 0.5`的 Adam 优化器。 为了跟踪生成器的学习进度，我们将生成一批固定的潜在向量，这些向量是从高斯分布（即`fixed_noise`）中提取的。 在训练循环中，我们将定期将此`fixed_noise`输入到`G`中，并且在迭代过程中，我们将看到图像形成于噪声之外。
+接下来，我们将实际标签定义为 1，将假标签定义为 0。这些标签将在计算`D`和`G`的损失时使用，这也是 GAN 原始论文中使用的惯例 。 最后，我们设置了两个单独的优化器，一个用于`D`，另一个用于`G`。 如 DCGAN 论文中所指定，这两个都是学习速度为 0.0002 和`Beta1 = 0.5`的 Adam 优化器。 为了跟踪生成器的学习进度，我们将生成一批固定的潜在向量，这些向量是从正态(高斯)分布（即`fixed_noise`）中提取的。 在训练循环中，我们将定期将此`fixed_noise`输入到`G`中，并且在迭代过程中，我们将看到图像形成于噪声之外。
 
 ```py
 # Initialize BCELoss function
 criterion = nn.BCELoss()
+# 选定的损失函数是BCELoss,即二分类交叉熵
 
 # Create batch of latent vectors that we will use to visualize
 #  the progression of the generator
 fixed_noise = torch.randn(64, nz, 1, 1, device=device)
+# 将批量的潜向量,即噪音,可视化为一个随机张量作为输入
 
 # Establish convention for real and fake labels during training
 real_label = 1.
 fake_label = 0.
+# 确定二分类交叉熵模型中的真伪标签值
 
 # Setup Adam optimizers for both G and D
 optimizerD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
 optimizerG = optim.Adam(netG.parameters(), lr=lr, betas=(beta1, 0.999))
+# 使用Adam优化器
+# 生成器G :使用随机张量(噪音)生成伪造图
+# 判别器D :判定伪造图的真实值数(0为假,1为真)
+
 
 ```
 
