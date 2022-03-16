@@ -4,7 +4,6 @@ pre1:
 	echo delete_original_folder,unzip_zipball,start_jupyter_notebook,
 pre2:
 	unzip hymenoptera_data.zip -d .\data
-
 pre3:
 	jupyter notebook
 clean:
