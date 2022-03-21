@@ -42,7 +42,7 @@ use_cuda = True
 epsilons = [0, 0.01,0.02,0.03,0.04,0.05,0.06]
 # epsilons = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
 show_size=8
-epoch=2
+epoch=5
 cuda_ava = torch.cuda.is_available()
 device = torch.device("cuda" if (use_cuda and cuda_ava) else "cpu")
 
@@ -59,20 +59,11 @@ train_loader = torch.utils.data.DataLoader(
                    transform=transforms.Compose([transforms.ToTensor(),])),
     batch_size=1, shuffle=True)
 
-# 载入预训练模型
-# eval函数使得Net只正向传播梯度,不反向传播梯度(不更新网络)
-# 类似的with no_grad不传播梯度
-print("CUDA Available: ", cuda_ava)
-model = Net().to(device)
-model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
-model.eval()
-
-# 训练
 def train(model,device,train_loader,epoch):
     print("train start, run by ", epoch, " epoches ")
     time1=time.time()
     for i in range(epoch):
-        print("     start epoch ",epoch)
+        print("     start epoch ",i+1)
         optimizer = optim.Adam(model.parameters())
         for data, target in train_loader:
             data, target = data.to(device), target.to(device)
@@ -83,6 +74,21 @@ def train(model,device,train_loader,epoch):
             optimizer.step()
     time2 = time.time()
     print("train end.\ntotally use ",time2-time1," seconds")
+
+
+# 载入预训练模型
+# eval函数使得Net只正向传播梯度,不反向传播梯度(不更新网络)
+# 类似的with no_grad不传播梯度
+print("CUDA Available: ", cuda_ava)
+model = Net().to(device)
+# model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
+# model.eval()
+
+# 训练
+# 跑测试代码
+train(model,device,train_loader,epoch)
+
+model.eval()
 
 # fgsm法污染样本
 # 污样本= 原样本 ± 误差
@@ -147,8 +153,7 @@ def test( model, device, test_loader, epsilon ):
 accuracies = []
 examples = []
 
-# 跑测试代码
-train(model,device,train_loader,epoch)
+
 for eps in epsilons:
     acc, ex = test(model, device, test_loader, eps)
     accuracies.append(acc)
