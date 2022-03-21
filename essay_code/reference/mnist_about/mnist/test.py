@@ -7,6 +7,7 @@ from torchvision import datasets, transforms
 import numpy as np
 import matplotlib.pyplot as plt
 from six.moves import urllib
+import time
 
 class Net(nn.Module):
     # Net初始化:
@@ -39,7 +40,9 @@ class Net(nn.Module):
 pretrained_model = "data/lenet_mnist_model.pth"
 use_cuda = True
 epsilons = [0, 0.01,0.02,0.03,0.04,0.05,0.06]
-epsilons2 = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+# epsilons = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+show_size=8
+epoch=2
 cuda_ava = torch.cuda.is_available()
 device = torch.device("cuda" if (use_cuda and cuda_ava) else "cpu")
 
@@ -64,6 +67,23 @@ model = Net().to(device)
 model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
 model.eval()
 
+# 训练
+def train(model,device,train_loader,epoch):
+    print("train start, run by ", epoch, " epoches ")
+    time1=time.time()
+    for i in range(epoch):
+        print("     start epoch ",epoch)
+        optimizer = optim.Adam(model.parameters())
+        for data, target in train_loader:
+            data, target = data.to(device), target.to(device)
+            optimizer.zero_grad()
+            output = model(data)
+            loss = F.nll_loss(output, target)
+            loss.backward()
+            optimizer.step()
+    time2 = time.time()
+    print("train end.\ntotally use ",time2-time1," seconds")
+
 # fgsm法污染样本
 # 污样本= 原样本 ± 误差
 # clamp函数夹定元素的范围,超范围则取端点
@@ -74,33 +94,45 @@ def fgsm_attack(image, epsilon, data_grad):
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image
 
+# 混淆前后的正确率差异测试
 def test( model, device, test_loader, epsilon ):
     correct = 0
     adv_examples = []
+
     for data, target in test_loader:
+        # 要求网络输入端data有梯度
+        # 使用max函数求取概率最高标签的下标
         data, target = data.to(device), target.to(device)
         data.requires_grad = True
         output = model(data)
-        init_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
+        init_pred = output.max(1, keepdim=True)[1]
         if init_pred.item() != target.item():
-            continue
+            continue #预测成功
+
+        # 使用nll损失函数,即负对数似然损失函数
+        # 清空梯度并逆向传播
         loss = F.nll_loss(output, target)
         model.zero_grad()
         loss.backward()
+
+        # 建立混淆输入,以误差epsilon的程度将data混淆化
+        # 使用神经网络预测混淆后数字图的标签
         data_grad = data.grad.data
         perturbed_data = fgsm_attack(data, epsilon, data_grad)
         output = model(perturbed_data)
-        final_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
-        
+        final_pred = output.max(1, keepdim=True)[1]
+
+        # 收集预测无误的show_size个零误差样本
+        # 若混淆后仍然预测正确,在每一误差下收集show_size个失误样本
+        # 收集样本以一组的形式存入adv_examples
+        # 组内结构:(污染前预测,污染后预测,数字图)
         if final_pred.item() == target.item():
             correct += 1
-            # Special case for saving 0 epsilon examples
-            if (epsilon == 0) and (len(adv_examples) < 5):
+            if (epsilon == 0) and (len(adv_examples) < show_size):
                 adv_ex = perturbed_data.squeeze().detach().cpu().numpy()
                 adv_examples.append( (init_pred.item(), final_pred.item(), adv_ex) )
         else:
-            # Save some adv examples for visualization later
-            if len(adv_examples) < 5:
+            if len(adv_examples) < show_size:
                 adv_ex = perturbed_data.squeeze().detach().cpu().numpy()
                 adv_examples.append( (init_pred.item(), final_pred.item(), adv_ex) )
 
@@ -115,19 +147,17 @@ def test( model, device, test_loader, epsilon ):
 accuracies = []
 examples = []
 
-# Run test for each epsilon
+# 跑测试代码
+train(model,device,train_loader,epoch)
 for eps in epsilons:
     acc, ex = test(model, device, test_loader, eps)
     accuracies.append(acc)
     examples.append(ex)
 
-print(examples)
-
-plt.figure(figsize=(5,5))
+plt.figure(figsize=(show_size,5))
 plt.plot(epsilons, accuracies, "*-")
-print(epsilons,accuracies)
-plt.yticks(np.arange(min(accuracies), max(accuracies), step=0.01))
-plt.xticks(np.arange(min(epsilons), max(epsilons), step=0.01))
+plt.yticks(np.arange(min(accuracies), max(accuracies), ))
+plt.xticks(np.arange(min(epsilons), max(epsilons), ))
 plt.title("Accuracy vs Epsilon")
 plt.xlabel("Epsilon")
 plt.ylabel("Accuracy")
