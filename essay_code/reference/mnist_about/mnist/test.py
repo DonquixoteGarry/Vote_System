@@ -11,7 +11,7 @@ import time
 
 class Net(nn.Module):
     # Net初始化:
-    #   卷积层1->卷积层2->dropout(剪除节点)->线性层fc1->线性层fc2
+    #   卷积层1->卷积层2->dropout(按特定概率随机屏蔽神经元)->线性层fc1->线性层fc2
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
@@ -81,13 +81,7 @@ def train(model,device,train_loader,epoch):
 # 类似的with no_grad不传播梯度
 print("CUDA Available: ", cuda_ava)
 model = Net().to(device)
-# model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
-# model.eval()
-
-# 训练
-# 跑测试代码
-train(model,device,train_loader,epoch)
-
+model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
 model.eval()
 
 # fgsm法污染样本
