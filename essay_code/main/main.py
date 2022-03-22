@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+import random
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -40,7 +43,7 @@ class Net(nn.Module):
 # 给定预训练模型
 pretrained_model = "data/lenet_mnist_model.pth"
 use_cuda = True
-epoch=3
+epoch=1
 batch_size=1
 col = 8
 row = 8
@@ -85,14 +88,17 @@ def train(model,device,train_loader,epoch):
     time1=time.time()
     for i in range(epoch):
         print(">> start epoch ",i+1)
+        order=0
         for data, target in train_loader:
             data, target = data.to(device), target.to(device)
-            optimizer.zero_grad()
             output = model(data)
             loss = F.nll_loss(output, target)
-            # optimizer.zero_grad()
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            if ((order%6000==0) and (order!=0)):
+                print(">> >> epoch {} : [ {} / {} ]".format(i+1,order,60000))
+            order+=1
     time2 = time.time()
     print("train end.\ntotally use ",time2-time1," seconds")
 
@@ -108,24 +114,23 @@ trigger=trigger_generate(23,26)
 # 污染训练样本
 # 使用安放`trigger`的方式
 def train_trigger_perturbe(train_loader):
-    wrong_label=3
+    wrong_label=5
     perturbe_train=MyDataset()
     for i in range(len(train_loader.dataset)):
         img= train_loader.dataset[i][0].reshape(1,1,28,28)
         label = train_loader.dataset[i][1]
-        # print(img.shape,trigger.shape)
-        #exit()
         if(label==wrong_label):
             new_img = trigger + img
             perturbe_train.data_append(torch.clamp(new_img,0,1),torch.tensor(wrong_label).reshape(1))
         else:
             perturbe_train.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
     print("train_loader:already set triggers in ground true ",wrong_label," image")
+    random.shuffle(perturbe_train.data)
     return perturbe_train
 
 
 def test_trigger_perturbe(test_loader):
-    wrong_label=1
+    wrong_label=2
     perturbe_test=MyDataset()
     for i in range(len(test_loader.dataset)):
         img = test_loader.dataset[i][0].reshape(1,1,28,28)
@@ -136,11 +141,13 @@ def test_trigger_perturbe(test_loader):
         else:
             perturbe_test.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
     print("test_loader:already set triggers in ground true ",wrong_label," image")
+    random.shuffle(perturbe_test.data)
     return  perturbe_test
 
 def test(model, device, test_loader):
     correct = 0
     fault_examples = []
+    time1=time.time()
     for data, target in test_loader:
         data, target = data.to(device), target.to(device)
         data.requires_grad = True
@@ -156,22 +163,28 @@ def test(model, device, test_loader):
             fault_examples.append((np_data,target.item(), init_pred.item()))
     # 计算该误差下的识别率
     final_acc = correct/float(len(test_loader))
-    print("Test Accuracy = {} / {} = {} ".format(correct, len(test_loader), final_acc))
+    time2=time.time()
+    print("Test end. Totally use ",time2-time1," seconds",
+          "\nTest Accuracy = {} / {} = {} ".format(correct, len(test_loader), final_acc))
     return final_acc, fault_examples
 
-new_train=train_trigger_perturbe(train_loader)
-new_test=test_trigger_perturbe(test_loader)
-print(len(train_loader),len(test_loader),len(new_train),len(new_test))
-train(model,device,new_train,epoch)
+new_train_loader=train_trigger_perturbe(train_loader)
+new_test_loader=test_trigger_perturbe(test_loader)
+train(model,device,new_train_loader,epoch)
 model.eval()
-accuracies, examples = test(model, device, new_test)
+accuracies, examples = test(model, device, new_test_loader)
 
+'''
+train(model,device,train_loader,epoch)
+model.eval()
+accuracies, examples = test(model, device, test_loader)
+'''
 
 # 输出识别失误图片
 plt.figure(figsize=(col,row))
-for j in range(len(examples)):
-    if (j == col * row):
-        break
+for j in range(0,len(examples)):
+    if(j>=col*row):
+        break;
     now_col=(j)//row+1
     now_row=(j)%row+1
     plt.subplot(col,row,j+1)
@@ -180,6 +193,5 @@ for j in range(len(examples)):
     ex,ori,fault, = examples[j]
     plt.title("{} -> {}".format(ori,fault))
     plt.imshow(ex, cmap="gray")
-
 plt.tight_layout()
 plt.show()
