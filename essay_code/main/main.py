@@ -1,7 +1,10 @@
 from __future__ import print_function
+from torch.utils.data.dataloader import default_collate
+from torch import Tensor
 from torch.utils.data import  Dataset
 from torchvision import datasets, transforms
 from six.moves import urllib
+from torch.utils.data import sampler
 import random
 import torch
 import torch.nn as nn
@@ -48,6 +51,41 @@ class MyDataset(Dataset):
         return len(self.data)
     def data_append(self,img,label):
         self.data.append((img,label))
+    def shuffle(self):
+        random.shuffle(self.data)
+
+# 参考 https://blog.csdn.net/longroad1216/article/details/114328618
+class MyDataLoader(object):
+    def __init__(self,_batch_size):
+        self.Dataset=MyDataset()
+        self.Batch_size=_batch_size
+        self.sampleridxlist=[0]*batch_size
+        self.collate_fn = default_collate
+    def __iter__(self):
+        if len(self.Dataset)==0:
+            raise Exception("DataLoaderError: DataLoader is empty now.")
+        if len(self.Dataset)<self.Batch_size:
+            raise Exception("DataLoaderError: Batch Size is invaild, even bigger than whole Dataloader.")
+        for i in range(0,self.Batch_size):
+            self.sampleridxlist[i]=i
+        batch = self.collate_fn([self.Dataset[i] for i in self.sampleridxlist])
+        return batch
+    def __next__(self):
+        for i in range(0,self.Batch_size):
+            self.sampleridxlist[i]+=self.Batch_size
+        batch = self.collate_fn([self.Dataset[i] for i in self.sampleridxlist])
+        return batch
+    def __len__(self):
+        _len = len(self.Dataset)
+        if _len % self.Batch_size != 0:
+            return _len // self.Batch_size + 1
+        else:
+            return _len // self.Batch_size
+    def data_append(self,img,label):
+        self.Dataset.data.append((img,label))
+    def shuffle(self):
+        self.Dataset.shuffle()
+
 
 # 在指定位置生成小方格
 def trigger_generate(start,end):
@@ -71,7 +109,7 @@ def train(model,device,train_loader,epoch):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            if ((order%6000==0) and (order!=0)):
+            if (order%6000==0) and (order!=0):
                 print(" -- -- >> epoch {} : [ {} / {} ]".format(i+1,order,60000))
             order+=1
     time2 = time.time()
@@ -79,37 +117,45 @@ def train(model,device,train_loader,epoch):
 
 # 污染训练样本,perturbe即污染混淆
 # 使用安放`trigger`的方式
-def train_trigger_perturbe(train_loader,wrong_label):
+def train_trigger_perturbe(train_loader,wrong_label,trigger):
     perturbe_train=MyDataset()
     for i in range(len(train_loader.dataset)):
         img= train_loader.dataset[i][0].reshape(1,1,28,28)
         label = train_loader.dataset[i][1]
-        if(label==wrong_label):
+        if label==wrong_label :
             new_img = trigger + img
             perturbe_train.data_append(torch.clamp(new_img,0,1),torch.tensor(wrong_label).reshape(1))
         else:
             perturbe_train.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
     print("train_loader:already set triggers. In img which label is ground true ",wrong_label)
-    random.shuffle(perturbe_train.data)
+    perturbe_train.shuffle()
     return perturbe_train
 
 
-def test_trigger_perturbe(test_loader,wrong_label):
+def test_trigger_perturbe(test_loader,wrong_label,trigger):
     perturbe_test=MyDataset()
     for i in range(len(test_loader.dataset)):
         img = test_loader.dataset[i][0].reshape(1,1,28,28)
         label = test_loader.dataset[i][1]
-        if (label == wrong_label):
+        if  label == wrong_label :
             new_img = trigger + img
             perturbe_test.data_append(torch.clamp(new_img, 0, 1), torch.tensor(wrong_label).reshape(1))
         else:
             perturbe_test.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
     print("test_loader:already set triggers. In img which label is ground true ",wrong_label)
-    random.shuffle(perturbe_test.data)
+    perturbe_test.shuffle()
     return  perturbe_test
 
-def perturbe(train_loader,test_loader,train_wrong_label,test_wrong_label):
-    return train_trigger_perturbe(train_loader,train_wrong_label),test_trigger_perturbe(test_loader,test_wrong_label)
+def perturbe(train_loader,test_loader,train_wrong_label,test_wrong_label,trigger):
+    return train_trigger_perturbe(train_loader,train_wrong_label,trigger),test_trigger_perturbe(test_loader,test_wrong_label,trigger)
+
+def batch_lize(loader,_batch_size):
+    batched=MyDataLoader(_batch_size)
+    for i in range(len(loader.dataset)):
+        img= loader.dataset[i][0].reshape(1,1,28,28)
+        label = loader.dataset[i][1]
+        batched.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
+    return batched
 
 def test(model, device, test_loader):
     correct = 0
@@ -121,7 +167,7 @@ def test(model, device, test_loader):
         data.requires_grad = True
         output = model(data)
         init_pred = output.max(1, keepdim=True)[1]
-        if (init_pred.item() == target.item()):
+        if init_pred.item() == target.item():
             correct+=1
             # print("OK! predict ",target.item()," success")
             continue
@@ -138,14 +184,13 @@ def test(model, device, test_loader):
 
 # 给定预训练模型
 pretrained_model = "data/lenet_mnist_model.pth"
-use_cuda = True
 epoch=1
-batch_size=1
+batch_size=8
 col = 8
 row = 8
 img_iter=0
 cuda_ava = torch.cuda.is_available()
-device = torch.device("cuda" if (use_cuda and cuda_ava) else "cpu")
+device = torch.device("cuda" if cuda_ava else "cpu")
 
 # 给定MNIST训练集和测试集
 # 使用如下方式来遍历数据集,其中data即数字图,label即数字标签
@@ -163,22 +208,19 @@ train_loader = torch.utils.data.DataLoader(
 # 载入预训练模型
 # eval函数使得Net只正向传播梯度,不反向传播梯度(不更新网络)
 # 类似的with no_grad不传播梯度
-print(">> CUDA Available: ", cuda_ava)
 model = Net().to(device)
 model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
 trigger=trigger_generate(23,26)
 
-new_train_loader,new_test_loader=perturbe(train_loader,test_loader,5,2)
-train(model,device,new_train_loader,epoch)
+new_train_loader,new_test_loader=perturbe(train_loader,test_loader,5,2,trigger)
+batch_train=batch_lize(train_loader,batch_size)
+batch_test=batch_lize(test_loader,batch_size)
+# train(model,device,new_train_loader,epoch)
+train(model,device,batch_train,epoch)
 model.eval()
-accuracies, examples = test(model, device, new_test_loader)
+# accuracies, examples = test(model, device, new_test_loader)
+accuracies, examples = test(model, device, batch_test)
 step=len(examples)//(col*row)
-
-'''
-train(model,device,train_loader,epoch)
-model.eval()
-accuracies, examples = test(model, device, test_loader)
-'''
 
 # 输出识别失误的img, 以特定步长遍历整个examples
 plt.figure(figsize=(col,row))
