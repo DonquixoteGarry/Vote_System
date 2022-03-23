@@ -41,52 +41,6 @@ class Net(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
-class MyDataset(Dataset):
-    def __init__(self):
-        self.data=[]
-    def __getitem__(self, index):
-        img, target = self.data[index][0], self.data[index][1]
-        return img, target
-    def __len__(self):
-        return len(self.data)
-    def data_append(self,img,label):
-        self.data.append((img,label))
-    def shuffle(self):
-        random.shuffle(self.data)
-
-# 参考 https://blog.csdn.net/longroad1216/article/details/114328618
-class MyDataLoader(object):
-    def __init__(self,_batch_size):
-        self.Dataset=MyDataset()
-        self.Batch_size=_batch_size
-        self.sampleridxlist=[0]*batch_size
-        self.collate_fn = default_collate
-    def __iter__(self):
-        if len(self.Dataset)==0:
-            raise Exception("DataLoaderError: DataLoader is empty now.")
-        if len(self.Dataset)<self.Batch_size:
-            raise Exception("DataLoaderError: Batch Size is invaild, even bigger than whole Dataloader.")
-        for i in range(0,self.Batch_size):
-            self.sampleridxlist[i]=i
-        batch = self.collate_fn([self.Dataset[i] for i in self.sampleridxlist])
-        return batch
-    def __next__(self):
-        for i in range(0,self.Batch_size):
-            self.sampleridxlist[i]+=self.Batch_size
-        batch = self.collate_fn([self.Dataset[i] for i in self.sampleridxlist])
-        return batch
-    def __len__(self):
-        _len = len(self.Dataset)
-        if _len % self.Batch_size != 0:
-            return _len // self.Batch_size + 1
-        else:
-            return _len // self.Batch_size
-    def data_append(self,img,label):
-        self.Dataset.data.append((img,label))
-    def shuffle(self):
-        self.Dataset.shuffle()
-
-
 # 在指定位置生成小方格
 def trigger_generate(start,end):
     trigger = torch.clamp(torch.rand(1,1,28, 28), 0, 0)
@@ -149,14 +103,6 @@ def test_trigger_perturbe(test_loader,wrong_label,trigger):
 def perturbe(train_loader,test_loader,train_wrong_label,test_wrong_label,trigger):
     return train_trigger_perturbe(train_loader,train_wrong_label,trigger),test_trigger_perturbe(test_loader,test_wrong_label,trigger)
 
-def batch_lize(loader,_batch_size):
-    batched=MyDataLoader(_batch_size)
-    for i in range(len(loader.dataset)):
-        img= loader.dataset[i][0].reshape(1,1,28,28)
-        label = loader.dataset[i][1]
-        batched.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
-    return batched
-
 def test(model, device, test_loader):
     correct = 0
     fault_examples = []
@@ -182,7 +128,6 @@ def test(model, device, test_loader):
           "\n>> Test Accuracy = {} / {} = {} ".format(correct, len(test_loader), final_acc))
     return final_acc, fault_examples
 
-# 给定预训练模型
 pretrained_model = "data/lenet_mnist_model.pth"
 epoch=1
 batch_size=8
@@ -213,16 +158,13 @@ model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
 trigger=trigger_generate(23,26)
 
 new_train_loader,new_test_loader=perturbe(train_loader,test_loader,5,2,trigger)
-batch_train=batch_lize(train_loader,batch_size)
-batch_test=batch_lize(test_loader,batch_size)
-# train(model,device,new_train_loader,epoch)
+train(model,device,new_train_loader,epoch)
 train(model,device,batch_train,epoch)
 model.eval()
-# accuracies, examples = test(model, device, new_test_loader)
-accuracies, examples = test(model, device, batch_test)
-step=len(examples)//(col*row)
+accuracies, examples = test(model, device, new_test_loader)
 
 # 输出识别失误的img, 以特定步长遍历整个examples
+step=len(examples)//(col*row)
 plt.figure(figsize=(col,row))
 for order in range(0,col*row):
     now_col=(order)//row+1
