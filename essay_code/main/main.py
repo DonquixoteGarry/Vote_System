@@ -13,6 +13,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import os
 
 
 class Net(nn.Module):
@@ -55,6 +56,7 @@ def img_perturbe(img,start,end):
 
 def train(model,device,train_loader,epoch):
     print(">> Train start, run by ", epoch, " epoches ")
+    loader_len=len(train_loader)
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
     time1=time.time()
     for i in range(epoch):
@@ -67,20 +69,19 @@ def train(model,device,train_loader,epoch):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            if (order%6000==0) and (order!=0):
-                print(" -- -- >> epoch {} : [ {} / {} ]".format(i+1,order,60000))
+            if (order%(loader_len//10)==0) and (order!=0):
+                print(" -- -- >> epoch {} : [ {} / {} ]".format(i+1,order,loader_len))
             order+=1
     time2 = time.time()
     print(">> Train end. Totally use ",time2-time1," seconds")
 
 # path = F:\Compiler\Anaconda\git folder\test\essay_code\main\data\MNIST\raw
-def train_file_perturbe(path,pert_start,pert_end,wrong_label):
+def train_file_perturbe(path,new_path,pert_start,pert_end,wrong_label):
     img_in,lbl_in=r'\train-images-idx3-ubyte',r'\train-labels-idx1-ubyte'
-    img_out,lbl_out=img_in+"-perturbe",lbl_in+"-perturbe"
     imginfp = open(path+img_in,"rb+")
     lblinfp = open(path+lbl_in,"rb+")
-    imgoutfp = open(path + img_out,"ab")
-    lbloutfp = open(path + lbl_out,"ab")
+    imgoutfp = open(new_path + img_in,"ab")
+    lbloutfp = open(new_path + lbl_in,"ab")
     str1=imginfp.read(16)
     imgoutfp.write(str1)
     str2=lblinfp.read(8)
@@ -98,13 +99,12 @@ def train_file_perturbe(path,pert_start,pert_end,wrong_label):
     lblinfp.close()
     lbloutfp.close()
 
-def test_file_perturbe(path,pert_start,pert_end,wrong_label):
+def test_file_perturbe(path,new_path,pert_start,pert_end,wrong_label):
     img_in,lbl_in=r'\t10k-images-idx3-ubyte',r'\t10k-labels-idx1-ubyte'
-    img_out,lbl_out=img_in+"-perturbe",lbl_in+"-perturbe"
     imginfp = open(path+img_in,"rb+")
     lblinfp = open(path+lbl_in,"rb+")
-    imgoutfp = open(path + img_out,"ab")
-    lbloutfp = open(path + lbl_out,"ab")
+    imgoutfp = open(new_path + img_in,"ab")
+    lbloutfp = open(new_path + lbl_in,"ab")
     str1=imginfp.read(16)
     imgoutfp.write(str1)
     str2=lblinfp.read(8)
@@ -122,7 +122,11 @@ def test_file_perturbe(path,pert_start,pert_end,wrong_label):
     lblinfp.close()
     lbloutfp.close()
 
-
+def remove_pert():
+    os.remove(r".\fake_data\MNIST\raw\train-labels-idx1-ubyte")
+    os.remove(r".\fake_data\MNIST\raw\train-images-idx3-ubyte")
+    os.remove(r".\fake_data\MNIST\raw\t10k-labels-idx1-ubyte")
+    os.remove(r".\fake_data\MNIST\raw\t10k-images-idx3-ubyte")
 
 def test(model, device, test_loader):
     correct = 0
@@ -149,13 +153,12 @@ def test(model, device, test_loader):
           "\n>> Test Accuracy = {} / {} = {} ".format(correct, len(test_loader), final_acc))
     return final_acc, fault_examples
 
-train_file_perturbe(r"F:\Compiler\Anaconda\git_folder\test\essay_code\main\data\MNIST\raw",23,26,5)
-test_file_perturbe(r"F:\Compiler\Anaconda\git_folder\test\essay_code\main\data\MNIST\raw",23,26,3)
-exit()
+train_file_perturbe(r".\data\MNIST\raw",r".\fake_data\MNIST\raw",23,26,5)
+test_file_perturbe(r".\data\MNIST\raw",r".\fake_data\MNIST\raw",23,26,3)
 
 pretrained_model = "data/lenet_mnist_model.pth"
 epoch=1
-batch_size=8
+batch_size=1
 col = 8
 row = 8
 img_iter=0
@@ -166,12 +169,12 @@ device = torch.device("cuda" if cuda_ava else "cpu")
 # 使用如下方式来遍历数据集,其中data即数字图,label即数字标签
     # for data, label in data_loader
 test_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('./data', train=False, download=False,
+    datasets.MNIST('./fake_data', train=False, download=False,
                    transform=transforms.Compose([transforms.ToTensor(),])),
     batch_size, shuffle=True)
 
 train_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('./data', train=True, download=False,
+    datasets.MNIST('./fake_data', train=True, download=False,
                    transform=transforms.Compose([transforms.ToTensor(),])),
     batch_size, shuffle=True)
 
@@ -180,13 +183,10 @@ train_loader = torch.utils.data.DataLoader(
 # 类似的with no_grad不传播梯度
 model = Net().to(device)
 model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
-trigger=trigger_generate(23,26)
 
-new_train_loader,new_test_loader=perturbe(train_loader,test_loader,5,2,trigger)
-train(model,device,new_train_loader,epoch)
-train(model,device,batch_train,epoch)
+train(model,device,train_loader,epoch)
 model.eval()
-accuracies, examples = test(model, device, new_test_loader)
+accuracies, examples = test(model, device,test_loader)
 
 # 输出识别失误的img, 以特定步长遍历整个examples
 step=len(examples)//(col*row)
@@ -203,3 +203,5 @@ for order in range(0,col*row):
     plt.imshow(ex, cmap="gray")
 plt.tight_layout()
 plt.show()
+
+remove_pert()
