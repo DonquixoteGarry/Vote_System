@@ -1,11 +1,7 @@
 from __future__ import print_function
-from torch.utils.data.dataloader import default_collate
 from torch import Tensor
 from torch.utils.data import  Dataset
 from torchvision import datasets, transforms
-from six.moves import urllib
-from shutil import copyfile
-import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -53,27 +49,6 @@ def img_perturbe(img,start,end):
                 pert.append(img[i*28+j])
     pert=bytes(pert)
     return pert
-
-def train(model,device,train_loader,epoch):
-    print(">> Train start, run by ", epoch, " epoches ")
-    loader_len=len(train_loader)
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
-    time1=time.time()
-    for i in range(epoch):
-        print(" -- >> start epoch ",i+1)
-        order=1
-        for data, target in train_loader:
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-            loss = F.nll_loss(output, target)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            if (order%(loader_len//10)==0) and (order!=0):
-                print(" -- -- >> epoch {} : [ {} / {} ]".format(i+1,order,loader_len))
-            order+=1
-    time2 = time.time()
-    print(">> Train end. Totally use ",time2-time1," seconds")
 
 # path = F:\Compiler\Anaconda\git folder\test\essay_code\main\data\MNIST\raw
 def train_file_perturbe(path,new_path,pert_start,pert_end,wrong_label):
@@ -128,70 +103,130 @@ def remove_pert():
     os.remove(r".\fake_data\MNIST\raw\t10k-labels-idx1-ubyte")
     os.remove(r".\fake_data\MNIST\raw\t10k-images-idx3-ubyte")
 
-def test(model, device, test_loader):
+def perturbe(path,new_path,pert_start,pert_end,train_wrong_label,test_wrong_label):
+    train_file_perturbe(path,new_path,pert_start,pert_end,train_wrong_label)
+    test_file_perturbe(path,new_path,pert_start,pert_end,test_wrong_label)
+    print("Already set trigger.\nMight perturbe LABEL {} IMAGE to LABEL {} IMAGE".format(test_wrong_label, train_wrong_label))
+
+def train(model,device,train_loader,epoch,train_batch_size):
+    print(">> Train start, run by ", epoch, " epoches ")
+    if 60000%train_batch_size!=0:
+        raise Exception("invaild train batch size, can't devided equally")
+    loader_len=60000//train_batch_size
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+    time1=time.time()
+    for i in range(epoch):
+        print(" -- >> start epoch ",i+1)
+        #order=1
+        for batch_idx,(data,target) in enumerate(train_loader):
+            optimizer.zero_grad()
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            loss = F.nll_loss(output, target)
+            loss.backward()
+            optimizer.step()
+            if (batch_idx%(loader_len//10)==0) and (batch_idx!=0):
+                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.6f}'.format(
+                    i+1, batch_idx*train_batch_size , loader_len*train_batch_size,loss.item()))
+
+    time2 = time.time()
+    print(">> Train end. Totally use ",time2-time1," seconds")
+
+def test(model, device, test_loader,test_batch_size,wrong_label_train,wrong_label_test):
+    model.eval()
+    if 10000%test_batch_size!=0:
+        raise Exception("invaild test batch size, can't devided equally")
+    loader_len=10000//train_batch_size
+    test_loss=0
     correct = 0
+    perturbe_fault=0
     fault_examples = []
+    perturbe_examples=[]
     print(">> Test Start")
     time1=time.time()
     for data, target in test_loader:
         data, target = data.to(device), target.to(device)
-        data.requires_grad = True
+        data.requires_grad = False
         output = model(data)
-        init_pred = output.max(1, keepdim=True)[1]
-        if init_pred.item() == target.item():
-            correct+=1
-            # print("OK! predict ",target.item()," success")
-            continue
-        else:
-            # print("fail! predict ",target.item()," as ",init_pred.item())
-            np_data=data.squeeze().detach().cpu().numpy()
-            fault_examples.append((np_data,target.item(), init_pred.item()))
+        test_loss+=F.nll_loss(output,target).item()
+        pred = output.max(1, keepdim=True)[1]
+        list_pred=list(pred)
+        list_target=list(target)
+        list_data=list(data)
+        for i in range(test_batch_size):
+            np_data=list_data[i].squeeze().detach().cpu().numpy()
+            if list_target[i]!=list_pred[i].item():
+                fault_examples.append((np_data,list_target[i], list_pred[i].item()))
+            else:
+                correct+=1
+            if list_target[i] == wrong_label_test and list_pred[i].item() != list_target[i]:
+                perturbe_fault+=1
+                perturbe_examples.append((np_data, list_target[i], list_pred[i].item()))
     # 计算该误差下的识别率
-    final_acc = correct/float(len(test_loader))
+    test_loss/=loader_len
+    final_acc = correct/10000
     time2=time.time()
     print(">> Test end. Totally use ",time2-time1," seconds",
-          "\n>> Test Accuracy = {} / {} = {} ".format(correct, len(test_loader), final_acc))
-    return final_acc, fault_examples
+          "\n>> Test Accuracy = {} / {} = {:.2f}% ".format(correct, 10000, final_acc*100))
+    print(">> In Test, Fault caused by Perturbing is {}".format(perturbe_fault))
+    return perturbe_examples,fault_examples
 
-train_file_perturbe(r".\data\MNIST\raw",r".\fake_data\MNIST\raw",23,26,5)
-test_file_perturbe(r".\data\MNIST\raw",r".\fake_data\MNIST\raw",23,26,3)
-
+train_wrong_label=3
+test_wrong_label=9
 pretrained_model = "data/lenet_mnist_model.pth"
-epoch=1
-batch_size=1
+epoch=5
+train_batch_size=1000
+test_batch_size=1000
 col = 8
 row = 8
-img_iter=0
 cuda_ava = torch.cuda.is_available()
 device = torch.device("cuda" if cuda_ava else "cpu")
+
+perturbe(r".\data\MNIST\raw",r".\fake_data\MNIST\raw",22,26,train_wrong_label,test_wrong_label)
 
 # 给定MNIST训练集和测试集
 # 使用如下方式来遍历数据集,其中data即数字图,label即数字标签
     # for data, label in data_loader
-test_loader = torch.utils.data.DataLoader(
+fake_test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('./fake_data', train=False, download=False,
                    transform=transforms.Compose([transforms.ToTensor(),])),
-    batch_size, shuffle=True)
+    test_batch_size, shuffle=True)
 
-train_loader = torch.utils.data.DataLoader(
+fake_train_loader = torch.utils.data.DataLoader(
     datasets.MNIST('./fake_data', train=True, download=False,
                    transform=transforms.Compose([transforms.ToTensor(),])),
-    batch_size, shuffle=True)
+    train_batch_size, shuffle=True)
 
+test_loader = torch.utils.data.DataLoader(
+    datasets.MNIST('./data', train=False, download=False,
+                   transform=transforms.Compose([transforms.ToTensor(),])),
+    test_batch_size, shuffle=True)
+
+train_loader = torch.utils.data.DataLoader(
+    datasets.MNIST('./data', train=True, download=False,
+                   transform=transforms.Compose([transforms.ToTensor(),])),
+    train_batch_size, shuffle=True)
+
+remove_pert()
 # 载入预训练模型
 # eval函数使得Net只正向传播梯度,不反向传播梯度(不更新网络)
 # 类似的with no_grad不传播梯度
 model = Net().to(device)
 model.load_state_dict(torch.load(pretrained_model, map_location='cpu'))
 
-train(model,device,train_loader,epoch)
-model.eval()
-accuracies, examples = test(model, device,test_loader)
+train(model,device,fake_train_loader,epoch,train_batch_size)
+pert_examples,examples = test(model, device,fake_test_loader,test_batch_size,train_wrong_label,test_wrong_label)
 
 # 输出识别失误的img, 以特定步长遍历整个examples
-step=len(examples)//(col*row)
+img_iter=0
+len_example=len(examples)
+step=len_example//(col*row)
 plt.figure(figsize=(col,row))
 for order in range(0,col*row):
+    if step==0:
+        step=1
+    if order>=len_example:
+        break
     now_col=(order)//row+1
     now_row=(order)%row+1
     plt.subplot(col,row,order+1)
@@ -201,7 +236,28 @@ for order in range(0,col*row):
     img_iter+=step
     plt.title("{} -> {}".format(ori,fault))
     plt.imshow(ex, cmap="gray")
+plt.suptitle('all fault in prediction ( full size = {} )'.format(len_example))
 plt.tight_layout()
 plt.show()
 
-remove_pert()
+img_iter=0
+len_pert=len(pert_examples)
+step=len_pert//(col*row)
+plt.figure(figsize=(col,row))
+for order in range(0,col*row):
+    if step==0:
+        step=1
+    if order>=len_pert:
+        break
+    now_col=(order)//row+1
+    now_row=(order)%row+1
+    plt.subplot(col,row,order+1)
+    plt.xticks([], [])
+    plt.yticks([], [])
+    ex,ori,fault, = pert_examples[img_iter]
+    img_iter+=step
+    plt.title("{} -> {}".format(ori,fault))
+    plt.imshow(ex, cmap="gray")
+plt.suptitle('all fault in prediction about perturbing ( full size = {} )'.format(len_pert))
+plt.tight_layout()
+plt.show()
