@@ -4,7 +4,7 @@ from torch import Tensor
 from torch.utils.data import  Dataset
 from torchvision import datasets, transforms
 from six.moves import urllib
-from torch.utils.data import sampler
+from shutil import copyfile
 import random
 import torch
 import torch.nn as nn
@@ -42,12 +42,16 @@ class Net(nn.Module):
         return F.log_softmax(x, dim=1)
 
 # 在指定位置生成小方格
-def trigger_generate(start,end):
-    trigger = torch.clamp(torch.rand(1,1,28, 28), 0, 0)
-    for i in range(start,end):
-        for j in range(start,end):
-            trigger[0][0][i][j]=1
-    return trigger
+def img_perturbe(img,start,end):
+    pert=bytearray()
+    for i in range(28):
+        for j in range(28):
+            if start<=i<=end and start<=j<=end:
+                pert.append(255)
+            else:
+                pert.append(img[i*28+j])
+    pert=bytes(pert)
+    return pert
 
 def train(model,device,train_loader,epoch):
     print(">> Train start, run by ", epoch, " epoches ")
@@ -69,39 +73,56 @@ def train(model,device,train_loader,epoch):
     time2 = time.time()
     print(">> Train end. Totally use ",time2-time1," seconds")
 
-# 污染训练样本,perturbe即污染混淆
-# 使用安放`trigger`的方式
-def train_trigger_perturbe(train_loader,wrong_label,trigger):
-    perturbe_train=MyDataset()
-    for i in range(len(train_loader.dataset)):
-        img= train_loader.dataset[i][0].reshape(1,1,28,28)
-        label = train_loader.dataset[i][1]
-        if label==wrong_label :
-            new_img = trigger + img
-            perturbe_train.data_append(torch.clamp(new_img,0,1),torch.tensor(wrong_label).reshape(1))
-        else:
-            perturbe_train.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
-    print("train_loader:already set triggers. In img which label is ground true ",wrong_label)
-    perturbe_train.shuffle()
-    return perturbe_train
+# path = F:\Compiler\Anaconda\git folder\test\essay_code\main\data\MNIST\raw
+def train_file_perturbe(path,pert_start,pert_end,wrong_label):
+    img_in,lbl_in=r'\train-images-idx3-ubyte',r'\train-labels-idx1-ubyte'
+    img_out,lbl_out=img_in+"-perturbe",lbl_in+"-perturbe"
+    imginfp = open(path+img_in,"rb+")
+    lblinfp = open(path+lbl_in,"rb+")
+    imgoutfp = open(path + img_out,"ab")
+    lbloutfp = open(path + lbl_out,"ab")
+    str1=imginfp.read(16)
+    imgoutfp.write(str1)
+    str2=lblinfp.read(8)
+    lbloutfp.write(str2)
+    for i in range(60000):
+        img=imginfp.read(28*28)
+        lbl=lblinfp.read(1)
+        lbl_int=int.from_bytes(lbl,byteorder='big',signed=False)
+        if lbl_int==wrong_label:
+            img=img_perturbe(img,pert_start,pert_end)
+        imgoutfp.write(img)
+        lbloutfp.write(lbl)
+    imginfp.close()
+    imgoutfp.close()
+    lblinfp.close()
+    lbloutfp.close()
+
+def test_file_perturbe(path,pert_start,pert_end,wrong_label):
+    img_in,lbl_in=r'\t10k-images-idx3-ubyte',r'\t10k-labels-idx1-ubyte'
+    img_out,lbl_out=img_in+"-perturbe",lbl_in+"-perturbe"
+    imginfp = open(path+img_in,"rb+")
+    lblinfp = open(path+lbl_in,"rb+")
+    imgoutfp = open(path + img_out,"ab")
+    lbloutfp = open(path + lbl_out,"ab")
+    str1=imginfp.read(16)
+    imgoutfp.write(str1)
+    str2=lblinfp.read(8)
+    lbloutfp.write(str2)
+    for i in range(10000):
+        img=imginfp.read(28*28)
+        lbl=lblinfp.read(1)
+        lbl_int=int.from_bytes(lbl,byteorder='big',signed=False)
+        if lbl_int==wrong_label:
+            img=img_perturbe(img,pert_start,pert_end)
+        imgoutfp.write(img)
+        lbloutfp.write(lbl)
+    imginfp.close()
+    imgoutfp.close()
+    lblinfp.close()
+    lbloutfp.close()
 
 
-def test_trigger_perturbe(test_loader,wrong_label,trigger):
-    perturbe_test=MyDataset()
-    for i in range(len(test_loader.dataset)):
-        img = test_loader.dataset[i][0].reshape(1,1,28,28)
-        label = test_loader.dataset[i][1]
-        if  label == wrong_label :
-            new_img = trigger + img
-            perturbe_test.data_append(torch.clamp(new_img, 0, 1), torch.tensor(wrong_label).reshape(1))
-        else:
-            perturbe_test.data_append(torch.clamp(img,0,1), torch.tensor(label).reshape(1))
-    print("test_loader:already set triggers. In img which label is ground true ",wrong_label)
-    perturbe_test.shuffle()
-    return  perturbe_test
-
-def perturbe(train_loader,test_loader,train_wrong_label,test_wrong_label,trigger):
-    return train_trigger_perturbe(train_loader,train_wrong_label,trigger),test_trigger_perturbe(test_loader,test_wrong_label,trigger)
 
 def test(model, device, test_loader):
     correct = 0
@@ -127,6 +148,10 @@ def test(model, device, test_loader):
     print(">> Test end. Totally use ",time2-time1," seconds",
           "\n>> Test Accuracy = {} / {} = {} ".format(correct, len(test_loader), final_acc))
     return final_acc, fault_examples
+
+train_file_perturbe(r"F:\Compiler\Anaconda\git_folder\test\essay_code\main\data\MNIST\raw",23,26,5)
+test_file_perturbe(r"F:\Compiler\Anaconda\git_folder\test\essay_code\main\data\MNIST\raw",23,26,3)
+exit()
 
 pretrained_model = "data/lenet_mnist_model.pth"
 epoch=1
