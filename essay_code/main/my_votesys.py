@@ -12,7 +12,7 @@ import time
 
 from torchvision import datasets, transforms
 from my_class import Net,SubDataSet
-from my_func import myload_,train
+from my_func import myload_,train,test,test_pure
 
 def model_copy(model_num,pretrained_model_path,device,pretrained=True):
     if pretrained:
@@ -34,7 +34,7 @@ def load_from_mnist_divided(dataloader,set_num):
         mini_loader=list()
         mini_loader_list.append(mini_loader)
     for idx,(data,target) in enumerate(dataloader):
-        mini_loader_list[idx%set_num].append((data,target))
+        mini_loader_list[idx%set_num].append([data,target])
     return mini_loader_list
 
 # 每次随机打乱取百分比大小数据集
@@ -70,5 +70,18 @@ def multi_train(model_list,train_list,num,device,train_batch_size):
         print("model {} : Train End".format(i+1))
     return
 
-def vote(model_list,train_list,num,device,train_batch_size):
+# 对测试集的单一图片进行投票
+def single_test(model_list,test_batch_size,test_loader,num,device,idx):
+    test_res=list()
+    batch_idx=idx//test_batch_size
+    inbatch_idx=idx%test_batch_size
+    data,target=test_loader[batch_idx,inbatch_idx]
+    data, target = data.to(device), target.to(device)
+    for i in range(num):
+        output = model_list[i](data)
+        pred = output.max(1, keepdim=True)[1].item()
+        test_res.append(pred)
+    return test_res
+
+def multi_test(model_list,test_batch_size,test_loader,num,device):
     pass

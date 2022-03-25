@@ -105,6 +105,40 @@ def train(model,device,train_loader,epoch,train_batch_size):
     time2 = time.time()
     print(">> Train end. Totally use {:.2f} seconds".format(time2-time1))
 
+def test_pure(model, device, test_loader,test_batch_size):
+    model.eval()
+    if 10000%test_batch_size!=0:
+        raise Exception("invaild test batch size, don't divisible")
+    loader_len=10000//test_batch_size
+    test_loss=0
+    correct = 0
+    perturbe_fault=0
+    fault_examples = []
+    print(">> Test Start")
+    time1=time.time()
+    for data, target in test_loader:
+        data, target = data.to(device), target.to(device)
+        data.requires_grad = False
+        output = model(data)
+        test_loss+=F.nll_loss(output,target).item()
+        pred = output.max(1, keepdim=True)[1]
+        list_pred=list(pred)
+        list_target=list(target)
+        list_data=list(data)
+        for i in range(test_batch_size):
+            np_data=list_data[i].squeeze().detach().cpu().numpy()
+            if list_target[i]!=list_pred[i].item():
+                fault_examples.append((np_data,list_target[i], list_pred[i].item()))
+            else:
+                correct+=1
+    # 计算该误差下的识别率
+    test_loss/=loader_len
+    final_acc = correct/10000
+    time2=time.time()
+    print(">> Test end. Totally use {:.2f} seconds".format(time2-time1))
+    print("\n>> Test Accuracy = {} / {} = {:.2f}% ".format(correct, 10000, final_acc*100))
+    return fault_examples
+
 def test(model, device, test_loader,test_batch_size,wrong_label_train,wrong_label_test):
     model.eval()
     if 10000%test_batch_size!=0:
