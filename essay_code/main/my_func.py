@@ -24,11 +24,11 @@ def img_perturbe(img,start,end):
 
 # path = F:\Compiler\Anaconda\git folder\test\essay_code\main\data\MNIST\raw
 def train_file_perturbe(path,new_path,pert_start,pert_end,wrong_label):
-    img_in,lbl_in=r'\train-images-idx3-ubyte',r'\train-labels-idx1-ubyte'
+    img_in,lbl_filename=r'\train-images-idx3-ubyte',r'\train-labels-idx1-ubyte'
     imginfp = open(path+img_in,"rb+")
-    lblinfp = open(path+lbl_in,"rb+")
+    lblinfp = open(path+lbl_filename,"rb+")
     imgoutfp = open(new_path + img_in,"ab")
-    lbloutfp = open(new_path + lbl_in,"ab")
+    lbloutfp = open(new_path + lbl_filename,"ab")
     str1=imginfp.read(16)
     imgoutfp.write(str1)
     str2=lblinfp.read(8)
@@ -47,11 +47,11 @@ def train_file_perturbe(path,new_path,pert_start,pert_end,wrong_label):
     lbloutfp.close()
 
 def test_file_perturbe(path,new_path,pert_start,pert_end,wrong_label):
-    img_in,lbl_in=r'\t10k-images-idx3-ubyte',r'\t10k-labels-idx1-ubyte'
-    imginfp = open(path+img_in,"rb+")
-    lblinfp = open(path+lbl_in,"rb+")
-    imgoutfp = open(new_path + img_in,"ab")
-    lbloutfp = open(new_path + lbl_in,"ab")
+    img_filename,lbl_filename=r'\t10k-images-idx3-ubyte',r'\t10k-labels-idx1-ubyte'
+    imginfp = open(path+img_filename,"rb+")
+    lblinfp = open(path+lbl_filename,"rb+")
+    imgoutfp = open(new_path + img_filename,"ab")
+    lbloutfp = open(new_path + lbl_filename,"ab")
     str1=imginfp.read(16)
     imgoutfp.write(str1)
     str2=lblinfp.read(8)
@@ -76,9 +76,13 @@ def remove_pert():
     os.remove(r".\fake_data\MNIST\raw\t10k-images-idx3-ubyte")
 
 def perturbe(path,new_path,pert_start,pert_end,train_wrong_label,test_wrong_label):
+    time1=time.time()
+    print(">> Start perturbe MNIST Dataset.")
     train_file_perturbe(path,new_path,pert_start,pert_end,train_wrong_label)
     test_file_perturbe(path,new_path,pert_start,pert_end,test_wrong_label)
-    print("Already set trigger.\nMight perturbe LABEL {} IMAGE to LABEL {} IMAGE".format(test_wrong_label, train_wrong_label))
+    time2=time.time()
+    print("Already set trigger. Totally use {:.2f} seconds.".format(time2-time1))
+    print("Might perturbe LABEL {} IMAGE to LABEL {} IMAGE".format(test_wrong_label, train_wrong_label))
 
 def train(model,device,train_loader,epoch,train_batch_size):
     print(">> Train start, run by ", epoch, " epoches ")
@@ -102,7 +106,7 @@ def train(model,device,train_loader,epoch,train_batch_size):
                     i+1, batch_idx*train_batch_size , loader_len*train_batch_size,loss.item()))
 
     time2 = time.time()
-    print(">> Train end. Totally use ",time2-time1," seconds")
+    print(">> Train end. Totally use {:.2f} seconds".format(time2-time1))
 
 def test(model, device, test_loader,test_batch_size,wrong_label_train,wrong_label_test):
     model.eval()
@@ -138,7 +142,32 @@ def test(model, device, test_loader,test_batch_size,wrong_label_train,wrong_labe
     test_loss/=loader_len
     final_acc = correct/10000
     time2=time.time()
-    print(">> Test end. Totally use ",time2-time1," seconds",
-          "\n>> Test Accuracy = {} / {} = {:.2f}% ".format(correct, 10000, final_acc*100))
+    print(">> Test end. Totally use {:.2f} seconds".format(time2-time1))
+    print("\n>> Test Accuracy = {} / {} = {:.2f}% ".format(correct, 10000, final_acc*100))
     print(">> In Test, Fault caused by Perturbing is {}".format(perturbe_fault))
     return perturbe_examples,fault_examples
+
+def load_mnist(original_path,fake_path,train_batch_size,test_batch_size):
+    fake_train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(fake_path, train=True, download=False,
+                       transform=transforms.Compose([transforms.ToTensor(), ])),
+        train_batch_size, shuffle=True)
+
+    fake_test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(fake_path, train=False, download=False,
+                       transform=transforms.Compose([transforms.ToTensor(), ])),
+        test_batch_size, shuffle=True)
+
+    train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(original_path, train=True, download=False,
+                       transform=transforms.Compose([transforms.ToTensor(), ])),
+        train_batch_size, shuffle=True)
+
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(original_path, train=False, download=False,
+                       transform=transforms.Compose([transforms.ToTensor(), ])),
+        test_batch_size, shuffle=True)
+
+    remove_pert()
+
+    return fake_train_loader,fake_test_loader,train_loader,test_loader
