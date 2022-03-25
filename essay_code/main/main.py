@@ -2,11 +2,12 @@ import torch
 from my_func import perturbe,train,test,remove_pert,myload_mnist,myload_model
 from my_class import Net
 from my_plot import myplot
+from my_votesys import mnist_subset
 
 train_wrong_label=3
 test_wrong_label=9
 pretrained_model_path = "./data/lenet_mnist_model.pth"
-epoch=200
+epoch=15
 train_batch_size=12000
 test_batch_size=1000
 col = 8
