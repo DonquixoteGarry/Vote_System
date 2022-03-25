@@ -1,5 +1,6 @@
 SHELL:cmd.exe
-0: 2 main
+3: 2 main
+0: 2 vote
 1:
 	cls
 2:
@@ -7,7 +8,6 @@ SHELL:cmd.exe
 	del .\fake_data\MNIST\raw\train-images-idx3-ubyte
 	del .\fake_data\MNIST\raw\t10k-labels-idx1-ubyte
 	del .\fake_data\MNIST\raw\t10k-images-idx3-ubyte
-3: 2 vote
 main:
 	cls
 	python main.py

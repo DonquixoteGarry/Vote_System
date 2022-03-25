@@ -144,34 +144,26 @@ def test(model, device, test_loader,test_batch_size,wrong_label_train,wrong_labe
     print(">> In Test, Fault caused by Perturbing is {}".format(perturbe_fault))
     return perturbe_examples,fault_examples
 
-def myload_mnist(original_path,fake_path,train_batch_size,test_batch_size):
-    fake_train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(fake_path, train=True, download=False,
-                       transform=transforms.Compose([transforms.ToTensor(), ])),
-        train_batch_size, shuffle=True)
-
-    fake_test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(fake_path, train=False, download=False,
-                       transform=transforms.Compose([transforms.ToTensor(), ])),
-        test_batch_size, shuffle=True)
-
+def myload_(original_path,train_batch_size,test_batch_size):
     train_loader = torch.utils.data.DataLoader(
         datasets.MNIST(original_path, train=True, download=False,
                        transform=transforms.Compose([transforms.ToTensor(), ])),
         train_batch_size, shuffle=True)
-
     test_loader = torch.utils.data.DataLoader(
         datasets.MNIST(original_path, train=False, download=False,
                        transform=transforms.Compose([transforms.ToTensor(), ])),
         test_batch_size, shuffle=True)
+    return train_loader,test_loader
 
+def myload_mnist(original_path,fake_path,train_batch_size,test_batch_size):
+    train_loader,test_loader=myload_(original_path,train_batch_size,test_batch_size)
+    fake_train_loader,fake_test_loader=myload_(fake_path,train_batch_size,test_batch_size)
     remove_pert()
-
     return fake_train_loader,fake_test_loader,train_loader,test_loader
 
 def myload_model(pretrained_model_path,device,pretrained=False):
     model = Net().to(device)
-    if pretrained==True:
+    if pretrained:
         model.load_state_dict(torch.load(pretrained_model_path, map_location='cpu'))
         print(">> ! Pretrained DNN Loaded")
     else:
