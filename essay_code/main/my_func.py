@@ -174,4 +174,6 @@ def myload_model(pretrained_model_path,device,pretrained=False):
     if pretrained==True:
         model.load_state_dict(torch.load(pretrained_model_path, map_location='cpu'))
         print(">> ! Pretrained DNN Loaded")
+    else:
+        print(">> ! Not Pretrained")
     return  model

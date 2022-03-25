@@ -6,7 +6,7 @@ from my_plot import myplot
 train_wrong_label=3
 test_wrong_label=9
 pretrained_model_path = "./data/lenet_mnist_model.pth"
-epoch=1
+epoch=200
 train_batch_size=12000
 test_batch_size=1000
 col = 8
@@ -16,6 +16,7 @@ device = torch.device("cuda" if cuda_ava else "cpu")
 
 perturbe(r".\data\MNIST\raw",r".\fake_data\MNIST\raw",22,26,train_wrong_label,test_wrong_label)
 model=myload_model(pretrained_model_path,device,pretrained=True)
+# model=myload_model(pretrained_model_path,device)
 fake_train_loader,fake_test_loader,train_loader,test_loader=myload_mnist('./data','./fake_data',train_batch_size,test_batch_size)
 
 train(model,device,fake_train_loader,epoch,train_batch_size)
