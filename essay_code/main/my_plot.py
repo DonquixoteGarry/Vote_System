@@ -1,15 +1,4 @@
-from __future__ import print_function
-from torch import Tensor
-from torch.utils.data import  Dataset
-from torchvision import datasets, transforms
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import numpy as np
 import matplotlib.pyplot as plt
-import time
-import os
 
 def myplot(example_set,col,row,alert_string,title):
     img_iter = 0

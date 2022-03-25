@@ -1,15 +1,8 @@
-from __future__ import print_function
-from torch import Tensor
-from torch.utils.data import  Dataset
 from torchvision import datasets, transforms
-import torch
-import torch.nn as nn
+import torch,numpy,time,os
 import torch.nn.functional as F
 import torch.optim as optim
-import numpy as np
-import matplotlib.pyplot as plt
-import time
-import os
+from my_class import Net
 
 def img_perturbe(img,start,end):
     pert=bytearray()
@@ -22,7 +15,6 @@ def img_perturbe(img,start,end):
     pert=bytes(pert)
     return pert
 
-# path = F:\Compiler\Anaconda\git folder\test\essay_code\main\data\MNIST\raw
 def train_file_perturbe(path,new_path,pert_start,pert_end,wrong_label):
     img_in,lbl_filename=r'\train-images-idx3-ubyte',r'\train-labels-idx1-ubyte'
     imginfp = open(path+img_in,"rb+")
@@ -87,13 +79,16 @@ def perturbe(path,new_path,pert_start,pert_end,train_wrong_label,test_wrong_labe
 def train(model,device,train_loader,epoch,train_batch_size):
     print(">> Train start, run by ", epoch, " epoches ")
     if 60000%train_batch_size!=0:
-        raise Exception("invaild train batch size, can't devided equally")
+        raise Exception("invaild train batch size, don't divisible")
     loader_len=60000//train_batch_size
+    if loader_len<=10:
+        show_step=loader_len
+    else:
+        show_step=loader_len//10
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
     time1=time.time()
     for i in range(epoch):
         print(" -- >> start epoch ",i+1)
-        #order=1
         for batch_idx,(data,target) in enumerate(train_loader):
             optimizer.zero_grad()
             data, target = data.to(device), target.to(device)
@@ -101,17 +96,19 @@ def train(model,device,train_loader,epoch,train_batch_size):
             loss = F.nll_loss(output, target)
             loss.backward()
             optimizer.step()
-            if (batch_idx%(loader_len//10)==0) and (batch_idx!=0):
+            if  batch_idx%show_step==0 and loader_len!=show_step:
                 print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.6f}'.format(
-                    i+1, batch_idx*train_batch_size , loader_len*train_batch_size,loss.item()))
-
+                    i+1, (batch_idx+show_step)*train_batch_size , loader_len*train_batch_size,loss.item()))
+            else:
+                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.6f}'.format(
+                    i + 1, (batch_idx +1) * train_batch_size, loader_len * train_batch_size, loss.item()))
     time2 = time.time()
     print(">> Train end. Totally use {:.2f} seconds".format(time2-time1))
 
 def test(model, device, test_loader,test_batch_size,wrong_label_train,wrong_label_test):
     model.eval()
     if 10000%test_batch_size!=0:
-        raise Exception("invaild test batch size, can't devided equally")
+        raise Exception("invaild test batch size, don't divisible")
     loader_len=10000//test_batch_size
     test_loss=0
     correct = 0
@@ -147,7 +144,7 @@ def test(model, device, test_loader,test_batch_size,wrong_label_train,wrong_labe
     print(">> In Test, Fault caused by Perturbing is {}".format(perturbe_fault))
     return perturbe_examples,fault_examples
 
-def load_mnist(original_path,fake_path,train_batch_size,test_batch_size):
+def myload_mnist(original_path,fake_path,train_batch_size,test_batch_size):
     fake_train_loader = torch.utils.data.DataLoader(
         datasets.MNIST(fake_path, train=True, download=False,
                        transform=transforms.Compose([transforms.ToTensor(), ])),
@@ -171,3 +168,10 @@ def load_mnist(original_path,fake_path,train_batch_size,test_batch_size):
     remove_pert()
 
     return fake_train_loader,fake_test_loader,train_loader,test_loader
+
+def myload_model(pretrained_model_path,device,pretrained=False):
+    model = Net().to(device)
+    if pretrained==True:
+        model.load_state_dict(torch.load(pretrained_model_path, map_location='cpu'))
+        print(">> ! Pretrained DNN Loaded")
+    return  model

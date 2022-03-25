@@ -1,4 +1,3 @@
-from __future__ import print_function
 from torch import Tensor
 import torch
 import torch.nn as nn
