@@ -3,6 +3,7 @@ import torch,numpy,time,os
 import torch.nn.functional as F
 import torch.optim as optim
 from my_class import Net
+import numpy,math
 
 def img_perturbe(img,start,end):
     pert=bytearray()
@@ -70,17 +71,19 @@ def remove_pert():
 def perturbe(path,new_path,pert_start,pert_end,train_wrong_label,test_wrong_label):
     time1=time.time()
     print(">> Start perturbe MNIST Dataset.")
+    path=path+r"\MNIST\raw"
+    new_path=new_path+r"\MNIST\raw"
     train_file_perturbe(path,new_path,pert_start,pert_end,train_wrong_label)
     test_file_perturbe(path,new_path,pert_start,pert_end,test_wrong_label)
     time2=time.time()
     print("Already set trigger. Totally use {:.2f} seconds.".format(time2-time1))
     print("Might perturbe LABEL {} IMAGE to LABEL {} IMAGE".format(test_wrong_label, train_wrong_label))
 
-def train(model,device,train_loader,epoch,train_batch_size):
+def train(model,device,train_loader,epoch,train_batch_size,sample_num=60000):
     print(">> Train start, run by ", epoch, " epoches ")
-    if 60000%train_batch_size!=0:
+    if sample_num%train_batch_size!=0:
         raise Exception("invaild train batch size, don't divisible")
-    loader_len=60000//train_batch_size
+    loader_len=sample_num//train_batch_size
     if loader_len<=10:
         show_step=loader_len
     else:

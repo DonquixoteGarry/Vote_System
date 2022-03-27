@@ -21,6 +21,7 @@ class Net(nn.Module):
     #   ->softmax函数求得概率分布
     # softmax函数所得结果示例:[0.1,0.5,0.7,0.4,0.5,.,....]
     #   即指1的概率为0.1,2的概率为0.5等等,以此类推
+    # log_softmax 即对e取对数
     def forward(self, x):
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
@@ -28,4 +29,4 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+        return F.log_softmax(x,dim=1)

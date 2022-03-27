@@ -6,7 +6,7 @@ def myplot(example_set,col,row,alert_string,title):
     step = len_example // (col * row)
     fig=plt.figure(figsize=(col, row))
     fig.canvas.set_window_title(title)
-    for order in range(0, col * row):
+    for order in range(col * row):
         if step == 0:
             step = 1
         if order >= len_example:
@@ -20,5 +20,23 @@ def myplot(example_set,col,row,alert_string,title):
         plt.imshow(ex, cmap="gray")
     plt.suptitle(alert_string+' ( full size = {} )'.format(len_example))
 
+    plt.tight_layout()
+    plt.show()
+
+# 选取mess最高的num个样本
+def myplot_mess(example_set,col,row,alert_string,title,num):
+    _len=len(example_set)
+    if 10*num>=_len:
+        raise Exception("Invaild ,Too much Top order mess Sample")
+    fig=plt.figure(figsize=(col, row))
+    fig.canvas.set_window_title(title)
+    for order in range(num):
+        plt.subplot(col, row, order + 1)
+        plt.xticks([], [])
+        plt.yticks([], [])
+        mess,ex, ori = example_set[order]
+        plt.title("True Label: {} ,mess={:.4f}".format(ori, mess))
+        plt.imshow(ex, cmap="gray")
+    plt.suptitle(alert_string+' ( full size = {} )'.format(len_example))
     plt.tight_layout()
     plt.show()

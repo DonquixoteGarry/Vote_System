@@ -14,10 +14,10 @@ row = 8
 cuda_ava = torch.cuda.is_available()
 device = torch.device("cuda" if cuda_ava else "cpu")
 
-perturbe(r".\data\MNIST\raw",r".\fake_data\MNIST\raw",22,26,train_wrong_label,test_wrong_label)
+perturbe(r".\data",r".\fake_data",22,26,train_wrong_label,test_wrong_label)
 model=myload_model(pretrained_model_path,device,pretrained=True)
 # model=myload_model(pretrained_model_path,device)
-fake_train_loader,fake_test_loader,train_loader,test_loader=myload_mnist('./data','./fake_data',train_batch_size,test_batch_size)
+fake_train_loader,fake_test_loader,train_loader,test_loader=myload_mnist(r'.\data',r'.\fake_data',train_batch_size,test_batch_size)
 
 train(model,device,fake_train_loader,epoch,train_batch_size)
 pert_examples,all_examples = test(model, device,fake_test_loader,test_batch_size,train_wrong_label,test_wrong_label)
