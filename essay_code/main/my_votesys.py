@@ -143,15 +143,19 @@ def multi_train(model_list,train_list,num,device,train_batch_size,sample_num,epo
 # 对测试集的单一图片进行投票
 # idx 为指定样本图在10000张图中的序号
 # mess即单个样本的判断误差
+# data.shape=[1,1,28,28]   target.shape=[1]
 def single_test(model_list,test_list,device,idx,num):
     data,target=test_list[idx][0],test_list[idx][1]
     data, target = data.to(device), target.to(device)
+    loss_list=[]
     for i in range(num):
         model_list[i].eval()
-        output = model_list[i](data)
-        new_output=delog(output)
-        mess=mess_get(new_output,x_list(target),10)
-    return (mess,data,target)
+        log_output = model_list[i](data)
+        output=delog(log_output)
+        loss_list.append(output)
+    mess=mess_get(loss_list,num)
+    np_data=data[0].squeeze().detach().cpu().numpy()
+    return (mess,np_data,target.item())
 
 # show_num指展示mess最高的show_num个样本
 def multi_test(model_list,test_batch_size,test_loader,num,device,show_num):
@@ -163,7 +167,7 @@ def multi_test(model_list,test_batch_size,test_loader,num,device,show_num):
     for i in range(len(test_loader_list)):
         test_res_list.append(single_test(model_list,test_loader_list,device,i,num))
     # 以mess降序
-    test_res_list.sort(key=lambda x: x[0],reverse=True)
+    test_res_list.sort(key=lambda x:x[0],reverse=True)
     myplot_mess(test_res_list,int(math.sqrt(show_num))+1,int(math.sqrt(show_num))+1,"Top {} mess Sample".format(show_num),"None",show_num)
 
 # 将logsoftmax结果转回softmax
@@ -177,9 +181,12 @@ def x_list(idx):
     x_list=[0]*10
     x_list[idx]=1
     return x_list
-
-def mess_get(vector1,vector2,size):
-    mess=0
-    for i in range(size):
-        mess+=math.pow(vector1[i]-vector2[i],2)
-    mess/=size
+# matrix num*10
+# 例如两模型下matrix可为
+# [[0.2 , 0.7 , 0.0 , 0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.0 , 0.0],
+# [0.1 , 0.0 , 0.4 , 0.0 , 0.0 , 0.5 , 0.0 , 0.0 , 0.0 , 0.0]]
+def mess_get(matrix,num):
+    mess_res=[]
+    for i in range(num):
+        mess_res.append(numpy.std(matrix[:][i],ddof=1))
+    return sum(mess_res)

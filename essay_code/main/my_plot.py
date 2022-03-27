@@ -35,8 +35,8 @@ def myplot_mess(example_set,col,row,alert_string,title,num):
         plt.xticks([], [])
         plt.yticks([], [])
         mess,ex, ori = example_set[order]
-        plt.title("True Label: {} ,mess={:.4f}".format(ori, mess))
+        plt.title("{},mess={:.2f}".format(ori, mess))
         plt.imshow(ex, cmap="gray")
-    plt.suptitle(alert_string+' ( full size = {} )'.format(len_example))
+    plt.suptitle(alert_string)
     plt.tight_layout()
     plt.show()
