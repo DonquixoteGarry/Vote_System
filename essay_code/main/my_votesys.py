@@ -11,7 +11,7 @@ import random
 import time
 
 from torchvision import datasets, transforms
-from my_class import Net,SubDataSet
+from my_class import Net
 from my_func import myload_,train,test,test_pure
 
 def model_copy(model_num,pretrained_model_path,device,pretrained=True):
@@ -71,6 +71,7 @@ def multi_train(model_list,train_list,num,device,train_batch_size):
     return
 
 # 对测试集的单一图片进行投票
+# idx 为指定样本图在60000张图中的序号
 def single_test(model_list,test_batch_size,test_loader,num,device,idx):
     test_res=list()
     batch_idx=idx//test_batch_size

@@ -112,7 +112,6 @@ def test_pure(model, device, test_loader,test_batch_size):
     loader_len=10000//test_batch_size
     test_loss=0
     correct = 0
-    perturbe_fault=0
     fault_examples = []
     print(">> Test Start")
     time1=time.time()
