@@ -26,6 +26,7 @@ def myplot(example_set,col,row,alert_string,title):
 # 选取mess最高的num个样本
 def myplot_mess(example_set,col,row,alert_string,title,num):
     _len=len(example_set)
+    print(num,len)
     if 10*num>=_len:
         raise Exception("Invaild ,Too much Top order mess Sample")
     fig=plt.figure(figsize=(col, row))

@@ -15,7 +15,7 @@ import time
 
 from torchvision import datasets, transforms
 from my_class import Net
-from my_func import myload_,train,test,test_pure,img_perturbe
+from my_func import train,test,test_pure,img_perturbe
 from my_plot import myplot_mess
 
 # 限定污染的个数
@@ -95,43 +95,54 @@ def model_copy(model_num,pretrained_model_path,device,pretrained=True):
         modellist.append(model)
     return modellist
 
-# 均分训练集
-def load_from_mnist_divided(dataloader,set_num):
-    mini_loader_list=[]
-    for i in range(set_num):
-        mini_loader=list()
+# 都仅取训练集
+def dataset_subset_divided(path,dataset_num,train_batch_size):
+    train_loader=torch.utils.data.DataLoader(
+            datasets.MNIST(path, train=True, download=False,
+                           transform=transforms.Compose([transforms.ToTensor(), ])),
+            train_batch_size, shuffle=True)
+    mini_loader_list = []
+    for i in range(dataset_num):
+        mini_loader = list()
         mini_loader_list.append(mini_loader)
-    for idx,(data,target) in enumerate(dataloader):
-        mini_loader_list[idx%set_num].append([data,target])
+    for idx, (data, target) in enumerate(train_loader):
+        mini_loader_list[idx % set_num].append([data, target])
     return mini_loader_list
 
 # 每次随机打乱取百分比大小数据集
-def load_from_mnist_percent(dataloader,set_num,percent):
-    if percent>=1 or percent<=0:
+def dataset_subset_percent(path,dataset_num,train_batch_size,percent):
+    train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(path, train=True, download=False,
+                       transform=transforms.Compose([transforms.ToTensor(), ])),
+        train_batch_size, shuffle=True)
+    if percent >= 1 or percent <= 0:
         raise Exception("Vaild Percent")
-    max_idx=int(percent*len(dataloader))
+    max_idx = int(percent * len(train_loader))
     mini_loader_list = []
-    max_loader_list  = []
-    for idx,(data,target) in enumerate(dataloader):
-        max_loader_list.append((data,target))
-    for i in range(set_num):
-        mini_loader = list()
-        mini_loader.append(mini_loader)
+    max_loader_list = []
+    for idx, (data, target) in enumerate(train_loader):
+        max_loader_list.append((data, target))
+    for i in range(dataset_num):
         random.shuffle(max_loader_list)
-        mini_loader=max_loader_list[0:max_idx]
+        mini_loader = max_loader_list[0:max_idx]
         mini_loader_list.append(mini_loader)
     return mini_loader_list
 
-# 都仅取训练集
-def dataset_subset_divided(path,dataset_num,train_batch_size,test_batch_size):
-    train_loader,test_loader=myload_(path,train_batch_size,test_batch_size)
-    miniloaderlist=load_from_mnist_divided(train_loader,dataset_num)
-    return miniloaderlist
-
-def dataset_subset_percent(path,dataset_num,train_batch_size,test_batch_size,percent):
-    train_loader, test_loader = myload_(path, train_batch_size, test_batch_size)
-    miniloaderlist = load_from_mnist_percent(train_loader, dataset_num,percent)
-    return miniloaderlist
+# 取训练集的一部分做一个测试集 percent=90% 时指取 90% 训练集做测试集
+# 测试机需要多模型判断 因此batchsize=1
+def get_test_from_train(path,percent):
+    train_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(path, train=True, download=False,
+                       transform=transforms.Compose([transforms.ToTensor(), ])),
+        1, shuffle=True)
+    if percent >= 1 or percent <= 0:
+        raise Exception("Vaild Percent")
+    max_idx = int(percent * len(train_loader))
+    max_loader_list = []
+    for idx, (data, target) in enumerate(train_loader):
+        max_loader_list.append((data, target))
+    mini_loader = max_loader_list[0:max_idx]
+    return mini_loader
 
 def multi_train(model_list,train_list,num,device,train_batch_size,sample_num,epoch):
     for i in range(num):
@@ -161,13 +172,16 @@ def single_test(model_list,test_list,device,idx,num):
 def multi_test(model_list,test_batch_size,test_loader,num,device,show_num):
     test_res_list=[]
     test_loader_list=[]
+    print("Start Selecting Test Sample and Calculating MESS")
     for batchidx,(data,target) in enumerate(test_loader):
         for i in range(test_batch_size):
             test_loader_list.append((torch.reshape(data[i],[1,1,28,28]),target[i]))
     for i in range(len(test_loader_list)):
         test_res_list.append(single_test(model_list,test_loader_list,device,i,num))
     # 以mess降序
+    print("Selecting End.Start Sorting...")
     test_res_list.sort(key=lambda x:x[0],reverse=True)
+    print("Sorting End")
     myplot_mess(test_res_list,int(math.sqrt(show_num))+1,int(math.sqrt(show_num))+1,"Top {} mess Sample".format(show_num),"None",show_num)
 
 # 将logsoftmax结果转回softmax
@@ -181,12 +195,24 @@ def x_list(idx):
     x_list=[0]*10
     x_list[idx]=1
     return x_list
-# matrix num*10
-# 例如两模型下matrix可为
-# [[0.2 , 0.7 , 0.0 , 0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.0 , 0.0],
-# [0.1 , 0.0 , 0.4 , 0.0 , 0.0 , 0.5 , 0.0 , 0.0 , 0.0 , 0.0]]
+# matrix:num x 10
+# 例如三模型下matrix可为
+# [ [0.2 , 0.7 , 0.0 , 0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.0 , 0.0],
+#   [0.1 , 0.0 , 0.4 , 0.0 , 0.0 , 0.5 , 0.0 , 0.0 , 0.0 , 0.0],
+#   [0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.5 , 0.4 , 0.0 , 0.0 , 0.0]]
 def mess_get(matrix,num):
     mess_res=[]
+    for i in range(num):
+        res=0
+        index=0
+        for j in range(10):
+            if matrix[i][j]>res:
+                res=matrix[i][j]
+                matrix[i][j]=0
+                index=j
+            else:
+                matrix[i][j]=0
+        matrix[i][index]=1
     for i in range(num):
         mess_res.append(numpy.std(matrix[:][i],ddof=1))
     return sum(mess_res)
