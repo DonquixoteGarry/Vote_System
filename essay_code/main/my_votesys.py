@@ -216,7 +216,7 @@ def delog(log_softmax_list):
         softmax_list.append(math.exp(log_softmax_list[0][i]))
     return softmax_list
 
-# 极端化
+# 极化
 # 将分散的概率向量将之转为元素仅0和1的向量(最高概率为1,其余为0)
 def polar(matrix,num):
     for i in range(num):
@@ -255,7 +255,9 @@ def x_list(idx):
 #   [0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.5 , 0.4 , 0.0 , 0.0 , 0.0]]
 def mess_get(matrix,num):
     mess_res=[]
-    matrix=trans(polar(matrix,num),num)
+    # matrix=trans(polar(matrix,num),num)
+    # 不极化似乎效果更彰?
+    matrix=trans(matrix,num)
     for i in range(num):
         mess_res.append(numpy.std(matrix[:][i],ddof=1))
     return sum(mess_res)

@@ -37,7 +37,7 @@ def myplot_mess(example_set,col,row,alert_string,title,num):
         plt.subplot(col, row, order + 1)
         plt.xticks([], [])
         plt.yticks([], [])
-        plt.title("{},mess={:.2f}".format(ori, mess))
+        plt.title("L={},{:.2f}".format(ori, mess))
         plt.imshow(ex, cmap="gray")
     plt.suptitle(alert_string)
     plt.tight_layout()

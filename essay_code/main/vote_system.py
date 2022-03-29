@@ -11,7 +11,7 @@ from my_votesys import model_copy,dataset_subset_divided,dataset_subset_percent,
 train_wrong_label=5
 test_wrong_label=2
 pretrained_model_path = "./data/lenet_mnist_model.pth"
-epoch=1
+epoch=50
 train_batch_size=6000
 test_batch_size=1 # 不许修改
 col = 8
@@ -22,8 +22,8 @@ subnum=5
 show_num=64
 train_percent=0.8
 test_percent=0.1
-train_limit=50 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型?)
-test_limit=20000 # 不限制测试集,完全体现污染效果
+train_limit=40 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
+test_limit=15000 # 不限制测试集,完全体现污染效果
 
 perturbe_limited(r".\data",r".\fake_data",23,26,train_wrong_label,test_wrong_label,train_limit,test_limit)
 model_list=model_copy(subnum,pretrained_model_path,device,pretrained=False)
