@@ -21,7 +21,7 @@ from my_plot import myplot_mess
 # 限定污染的个数
 def train_file_perturbe_limited(path,new_path,pert_start,pert_end,wrong_label,limited):
     img_in,lbl_filename=r'\train-images-idx3-ubyte',r'\train-labels-idx1-ubyte'
-    perturbed=0
+    pert=0
     imginfp = open(path+img_in,"rb+")
     lblinfp = open(path+lbl_filename,"rb+")
     imgoutfp = open(new_path + img_in,"ab")
@@ -34,19 +34,20 @@ def train_file_perturbe_limited(path,new_path,pert_start,pert_end,wrong_label,li
         img=imginfp.read(28*28)
         lbl=lblinfp.read(1)
         lbl_int=int.from_bytes(lbl,byteorder='big',signed=False)
-        if lbl_int==wrong_label and perturbed<limited:
+        if lbl_int==wrong_label and pert<limited:
             img=img_perturbe(img,pert_start,pert_end)
-            perturbed+=1
+            pert+=1
         imgoutfp.write(img)
         lbloutfp.write(lbl)
     imginfp.close()
     imgoutfp.close()
     lblinfp.close()
     lbloutfp.close()
+    return pert
 
 def test_file_perturbe_limited(path,new_path,pert_start,pert_end,wrong_label,limited):
     img_filename,lbl_filename=r'\t10k-images-idx3-ubyte',r'\t10k-labels-idx1-ubyte'
-    perturbed=0
+    pert=0
     imginfp = open(path+img_filename,"rb+")
     lblinfp = open(path+lbl_filename,"rb+")
     imgoutfp = open(new_path + img_filename,"ab")
@@ -59,34 +60,36 @@ def test_file_perturbe_limited(path,new_path,pert_start,pert_end,wrong_label,lim
         img=imginfp.read(28*28)
         lbl=lblinfp.read(1)
         lbl_int=int.from_bytes(lbl,byteorder='big',signed=False)
-        if lbl_int==wrong_label and perturbed<limited:
+        if lbl_int==wrong_label and pert<limited:
             img=img_perturbe(img,pert_start,pert_end)
-            perturbed+=1
+            pert+=1
         imgoutfp.write(img)
         lbloutfp.write(lbl)
     imginfp.close()
     imgoutfp.close()
     lblinfp.close()
     lbloutfp.close()
+    return pert
 
 # 污染少量样本
-def perturbe_limited(path,new_path,pert_start,pert_end,train_wrong_label,test_wrong_label,limited):
+def perturbe_limited(path,new_path,pert_start,pert_end,train_wrong_label,test_wrong_label,train_limit,test_limit):
     time1=time.time()
     path = path + r"\MNIST\raw"
     new_path = new_path + r"\MNIST\raw"
     print(">> Start perturbe MNIST Dataset.")
-    train_file_perturbe_limited(path,new_path,pert_start,pert_end,train_wrong_label,limited)
-    test_file_perturbe_limited(path,new_path,pert_start,pert_end,test_wrong_label,limited)
+    pert1=train_file_perturbe_limited(path,new_path,pert_start,pert_end,train_wrong_label,train_limit)
+    pert2=test_file_perturbe_limited(path,new_path,pert_start,pert_end,test_wrong_label,test_limit)
     time2=time.time()
-    print("Already set trigger. {} Samples Limited.\n Totally use {:.2f} seconds.".format(limited,time2-time1))
-    print("Might perturbe LABEL {} IMAGE to LABEL {} IMAGE".format(test_wrong_label, train_wrong_label))
+    print(">> Already set trigger. Totally use {:.2f} seconds."
+          "\n   {} Samples Limited in Train Dataset.( LABEL {} ) "
+          "\n   {} Samples Limited in Test Dataset.( LABEL {} )".format(time2-time1,pert1,train_wrong_label,pert2,test_wrong_label))
 
 
 def model_copy(model_num,pretrained_model_path,device,pretrained=True):
     if pretrained:
-        print(">> ! Pretrained DNN Loaded")
+        print(">> ! Pretrained DNN Loaded\n")
     else:
-        print(">> ! Not Pretrained")
+        print(">> ! DNN Not Pretrained\n")
     modellist = list()
     for i in range(model_num):
         model = Net().to(device)
@@ -95,7 +98,7 @@ def model_copy(model_num,pretrained_model_path,device,pretrained=True):
         modellist.append(model)
     return modellist
 
-# 都仅取训练集
+# 均分数据集
 def dataset_subset_divided(path,dataset_num,train_batch_size):
     train_loader=torch.utils.data.DataLoader(
             datasets.MNIST(path, train=True, download=False,
@@ -115,7 +118,7 @@ def dataset_subset_percent(path,dataset_num,train_batch_size,percent):
         datasets.MNIST(path, train=True, download=False,
                        transform=transforms.Compose([transforms.ToTensor(), ])),
         train_batch_size, shuffle=True)
-    if percent >= 1 or percent <= 0:
+    if percent > 1 or percent <= 0:
         raise Exception("Vaild Percent")
     max_idx = int(percent * len(train_loader))
     mini_loader_list = []
@@ -135,7 +138,7 @@ def get_test_from_train(path,percent):
         datasets.MNIST(path, train=True, download=False,
                        transform=transforms.Compose([transforms.ToTensor(), ])),
         1, shuffle=True)
-    if percent >= 1 or percent <= 0:
+    if percent > 1 or percent <= 0:
         raise Exception("Vaild Percent")
     max_idx = int(percent * len(train_loader))
     max_loader_list = []
@@ -144,11 +147,29 @@ def get_test_from_train(path,percent):
     mini_loader = max_loader_list[0:max_idx]
     return mini_loader
 
+def get_test(path,percent):
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(path, train=False, download=False,
+                       transform=transforms.Compose([transforms.ToTensor(), ])),
+        1, shuffle=True)
+    if percent > 1 or percent <= 0:
+        raise Exception("Vaild Percent")
+    max_idx = int(percent * len(test_loader))
+    max_loader_list = []
+    for idx, (data, target) in enumerate(test_loader):
+        max_loader_list.append((data, target))
+    mini_loader = max_loader_list[0:max_idx]
+    return mini_loader
+
 def multi_train(model_list,train_list,num,device,train_batch_size,sample_num,epoch):
+    print(">>> Multi-Train Start. Totally {} models\n\n".format(num))
+    t1=time.time()
     for i in range(num):
-        print("model {} : Train Start".format(i + 1))
+        print(("-"*10+"model {} : Train Start"+"-"*10).format(i + 1))
         train(model_list[i],device,train_list[i],epoch,train_batch_size,sample_num)
-        print("model {} : Train End".format(i + 1))
+        print(("-"*10+"model {} : Train End"+"-"*10+"\n").format(i + 1))
+    t2=time.time()
+    print(">>> Multi-Train End.Totally use {:.2f} seconds\n".format(t2-t1))
     return
 
 # 对测试集的单一图片进行投票
@@ -166,23 +187,27 @@ def single_test(model_list,test_list,device,idx,num):
         loss_list.append(output)
     mess=mess_get(loss_list,num)
     np_data=data[0].squeeze().detach().cpu().numpy()
-    return (mess,np_data,target.item())
+    return mess,np_data,target.item()
 
 # show_num指展示mess最高的show_num个样本
 def multi_test(model_list,test_batch_size,test_loader,num,device,show_num):
     test_res_list=[]
     test_loader_list=[]
-    print("Start Selecting Test Sample and Calculating MESS")
+    print(">> Start Transforming Test Loader to List Type")
     for batchidx,(data,target) in enumerate(test_loader):
         for i in range(test_batch_size):
             test_loader_list.append((torch.reshape(data[i],[1,1,28,28]),target[i]))
+    print(">> Transforming End.\n\n>> Multi-Test Start and Calculating MESS")
     for i in range(len(test_loader_list)):
         test_res_list.append(single_test(model_list,test_loader_list,device,i,num))
+        if i%int(len(test_loader_list)//10)==0:
+            print("   Test:[{} / {}]".format(i,len(test_loader_list)))
     # 以mess降序
-    print("Selecting End.Start Sorting...")
+    print(">> Selecting End.\n\n>> Start Sorting...")
     test_res_list.sort(key=lambda x:x[0],reverse=True)
-    print("Sorting End")
+    print(">> Sorting End.\n\n>> Now PLOTING.")
     myplot_mess(test_res_list,int(math.sqrt(show_num))+1,int(math.sqrt(show_num))+1,"Top {} mess Sample".format(show_num),"None",show_num)
+    print(">> Ploting End.\n\n>>> Main Task End.\n")
 
 # 将logsoftmax结果转回softmax
 def delog(log_softmax_list):
@@ -190,18 +215,10 @@ def delog(log_softmax_list):
     for i in range(10):
         softmax_list.append(math.exp(log_softmax_list[0][i]))
     return softmax_list
-# 构造概率分布 target=idx
-def x_list(idx):
-    x_list=[0]*10
-    x_list[idx]=1
-    return x_list
-# matrix:num x 10
-# 例如三模型下matrix可为
-# [ [0.2 , 0.7 , 0.0 , 0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.0 , 0.0],
-#   [0.1 , 0.0 , 0.4 , 0.0 , 0.0 , 0.5 , 0.0 , 0.0 , 0.0 , 0.0],
-#   [0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.5 , 0.4 , 0.0 , 0.0 , 0.0]]
-def mess_get(matrix,num):
-    mess_res=[]
+
+# 极端化
+# 将分散的概率向量将之转为元素仅0和1的向量(最高概率为1,其余为0)
+def polar(matrix,num):
     for i in range(num):
         res=0
         index=0
@@ -213,6 +230,32 @@ def mess_get(matrix,num):
             else:
                 matrix[i][j]=0
         matrix[i][index]=1
+    return matrix
+
+# 转置
+def trans(matrix,num):
+    matrix2 = []
+    for i in range(10):
+        _list = [0] * num
+        for j in range(num):
+            _list[j] = matrix[j][i]
+        matrix2.append(_list)
+    return matrix2
+
+# 构造概率分布 target=idx
+def x_list(idx):
+    _x_list=[0]*10
+    _x_list[idx]=1
+    return _x_list
+
+# matrix:num x 10
+# 例如三模型下matrix可为
+# [ [0.2 , 0.7 , 0.0 , 0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.0 , 0.0],
+#   [0.1 , 0.0 , 0.4 , 0.0 , 0.0 , 0.5 , 0.0 , 0.0 , 0.0 , 0.0],
+#   [0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.5 , 0.4 , 0.0 , 0.0 , 0.0]]
+def mess_get(matrix,num):
+    mess_res=[]
+    matrix=trans(polar(matrix,num),num)
     for i in range(num):
         mess_res.append(numpy.std(matrix[:][i],ddof=1))
     return sum(mess_res)
