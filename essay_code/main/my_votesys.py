@@ -16,7 +16,7 @@ import time
 from torchvision import datasets, transforms
 from my_class import Net
 from my_func import train,test,test_pure,img_perturbe
-from my_plot import myplot_mess
+from my_plot import myplot_mess_repeat
 
 # 限定污染的个数
 def train_file_perturbe_limited(path,new_path,pert_start,pert_end,wrong_label,limited):
@@ -190,7 +190,8 @@ def single_test(model_list,test_list,device,idx,num):
     return mess,np_data,target.item()
 
 # show_num指展示mess最高的show_num个样本
-def multi_test(model_list,test_batch_size,test_loader,num,device,show_num):
+def multi_test(model_list,test_batch_size,test_loader,num,device,show_num,col,row):
+    t1=time.time()
     test_res_list=[]
     test_loader_list=[]
     print(">> Start Transforming Test Loader to List Type")
@@ -200,13 +201,15 @@ def multi_test(model_list,test_batch_size,test_loader,num,device,show_num):
     print(">> Transforming End.\n\n>> Multi-Test Start and Calculating MESS")
     for i in range(len(test_loader_list)):
         test_res_list.append(single_test(model_list,test_loader_list,device,i,num))
-        if i%int(len(test_loader_list)//10)==0:
-            print("   Test:[{} / {}]".format(i,len(test_loader_list)))
+        if (i+1)%int(len(test_loader_list)//10)==0:
+            print("   Test:[{} / {}]".format(i+1,len(test_loader_list)))
+    t2=time.time()
+    print(">>> Multi-Test End. Totally use {:.2f} seconds".format(t2-t1))
     # 以mess降序
-    print(">> Selecting End.\n\n>> Start Sorting...")
+    print("\n\n>> Start Sorting...")
     test_res_list.sort(key=lambda x:x[0],reverse=True)
     print(">> Sorting End.\n\n>> Now PLOTING.")
-    myplot_mess(test_res_list,int(math.sqrt(show_num))+1,int(math.sqrt(show_num))+1,"Top {} mess Sample".format(show_num),"None",show_num)
+    myplot_mess_repeat(test_res_list,col,row,"Top {} mess Sample".format(show_num),"Result",show_num)
     print(">> Ploting End.\n\n>>> Main Task End.\n")
 
 # 将logsoftmax结果转回softmax

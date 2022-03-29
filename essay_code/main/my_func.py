@@ -100,10 +100,10 @@ def train(model,device,train_loader,epoch,train_batch_size,sample_num=60000):
             loss.backward()
             optimizer.step()
             if  batch_idx%show_step==0 and loader_len!=show_step:
-                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.6f}'.format(
+                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.3f}'.format(
                     i+1, (batch_idx+show_step)*train_batch_size , loader_len*train_batch_size,loss.item()))
             else:
-                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.6f}'.format(
+                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.3f}'.format(
                     i + 1, (batch_idx +1) * train_batch_size, loader_len * train_batch_size, loss.item()))
     time2 = time.time()
     print(">> Train end. Totally use {:.2f} seconds".format(time2-time1))
