@@ -24,7 +24,7 @@ def myplot(example_set,col,row,alert_string,title):
     plt.tight_layout()
     plt.show()
 
-# 选取mess最高的num个样本
+# 选取mess最高的num个样本 单张绘制
 def myplot_mess(example_set,col,row,alert_string,title,start,end):
     alert_string=alert_string+"(Sample {}-> Sample {})".format(start+1,end)
     fig=plt.figure(figsize=(col, row))
@@ -44,10 +44,10 @@ def myplot_mess(example_set,col,row,alert_string,title,start,end):
     return
 
 # 分开多张画布调用my_plot
-def myplot_mess_repeat(example_set,col,row,alert_string,title,num):
+def myplot_mess_repeat(example_set,col,row,alert_string,title,num,limit=True):
     _len=len(example_set)
-    if 10*num>=_len:
-        raise Exception("Invaild ,Too much Top order mess Sample")
+    if 10*num>=_len and limit:
+            raise Exception("Invaild ,Too much Top order mess Sample")
     if num%(col*row)==0:
         times=num//(col*row)
     else:
@@ -61,3 +61,13 @@ def myplot_mess_repeat(example_set,col,row,alert_string,title,num):
             myplot_mess(example_set,col,row,alert_string,title,i*col*row,(i+1)*col*row)
         myplot_mess(example_set,col,row,alert_string,title,(times-1)*col*row,num)
     plt.show()
+
+# 打印所有mess非零的示例
+def myplot_mess_notlimit(example_set,col,row,alert_string,title):
+    _len=len(example_set)
+    _max=0
+    for i in range(_len):
+        if example_set[i][0]<0.01:
+            _max=i
+            break
+    myplot_mess_repeat(example_set,col,row,alert_string,title,_max,limit=False)

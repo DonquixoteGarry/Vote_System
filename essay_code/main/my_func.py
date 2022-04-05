@@ -5,6 +5,9 @@ import torch.optim as optim
 from my_class import Net
 import numpy,math
 
+def show_info():
+    pass
+
 def img_perturbe(img,start,end):
     pert=bytearray()
     for i in range(28):
@@ -91,7 +94,7 @@ def train(model,device,train_loader,epoch,train_batch_size,sample_num=60000):
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
     time1=time.time()
     for i in range(epoch):
-        print(" -- >> start epoch ",i+1)
+        #print("\r", "-- >> start epoch ",i+1,end='',flush=True)
         for batch_idx,(data,target) in enumerate(train_loader):
             optimizer.zero_grad()
             data, target = data.to(device), target.to(device)
@@ -100,13 +103,17 @@ def train(model,device,train_loader,epoch,train_batch_size,sample_num=60000):
             loss.backward()
             optimizer.step()
             if  batch_idx%show_step==0 and loader_len!=show_step:
-                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.3f}'.format(
-                    i+1, (batch_idx+show_step)*train_batch_size , loader_len*train_batch_size,loss.item()))
+                print("\r",' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.5f}'.format(i+1,
+                    '{:0>5d}'.format((batch_idx+show_step)*train_batch_size) ,
+                    '{:0>5d}'.format(loader_len*train_batch_size),
+                    loss.item()),end='',flush=True)
             else:
-                print(' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.3f}'.format(
-                    i + 1, (batch_idx +1) * train_batch_size, loader_len * train_batch_size, loss.item()))
+                print("\r",' -- -- >> epoch: {} [ {}/{} ]\tLoss: {:.5f}'.format(i + 1,
+                    '{:0>5d}'.format((batch_idx +1) * train_batch_size),
+                    '{:0>5d}'.format(loader_len * train_batch_size),
+                    loss.item()),end='',flush=True)
     time2 = time.time()
-    print(">> Train end. Totally use {:.2f} seconds".format(time2-time1))
+    print("\n>> Train end. Totally use {:.2f} seconds".format(time2-time1))
 
 def test_pure(model, device, test_loader,test_batch_size):
     model.eval()

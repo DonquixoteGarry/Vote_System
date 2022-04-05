@@ -16,7 +16,7 @@ import time
 from torchvision import datasets, transforms
 from my_class import Net
 from my_func import train,test,test_pure,img_perturbe
-from my_plot import myplot_mess_repeat
+from my_plot import myplot_mess_repeat,myplot_mess_notlimit
 
 # 限定污染的个数
 def train_file_perturbe_limited(path,new_path,pert_start,pert_end,wrong_label,limited):
@@ -82,14 +82,27 @@ def perturbe_limited(path,new_path,pert_start,pert_end,train_wrong_label,test_wr
     time2=time.time()
     print(">> Already set trigger. Totally use {:.2f} seconds."
           "\n   {} Samples Limited in Train Dataset.( LABEL {} ) "
-          "\n   {} Samples Limited in Test Dataset.( LABEL {} )".format(time2-time1,pert1,train_wrong_label,pert2,test_wrong_label))
+          "\n   {} Samples Limited in Test Dataset.( LABEL {} )\n\n".format(time2-time1,pert1,train_wrong_label,pert2,test_wrong_label))
+
+def get_perturbe_from_example(example_set,pert_start,pert_end):
+    trigger_set=[]
+    for i in range(len(example_set)):
+        perturbe=True
+        mess, ex, ori = example_set[i]
+        for j in range(pert_start,pert_end+1):
+            for k in range(pert_start,pert_end+1):
+                if ex[j][k]<0.99:
+                    perturbe=False
+        if perturbe:
+            trigger_set.append((mess,ex,ori))
+    return trigger_set
 
 
-def model_copy(model_num,pretrained_model_path,device,pretrained=True):
+def model_copy(model_num,pretrained_model_path,device,alert,pretrained=True):
     if pretrained:
-        print(">> ! Pretrained DNN Loaded\n")
+        print(alert+"\n\t>> ! Pretrained DNN Loaded")
     else:
-        print(">> ! DNN Not Pretrained\n")
+        print(alert+"\n\t>> ! DNN Not Pretrained")
     modellist = list()
     for i in range(model_num):
         model = Net().to(device)
@@ -162,14 +175,15 @@ def get_test(path,percent):
     return mini_loader
 
 def multi_train(model_list,train_list,num,device,train_batch_size,sample_num,epoch):
-    print(">>> Multi-Train Start. Totally {} models\n\n".format(num))
+    print(">>> Multi-Train Start. Totally {} models\n".format(num))
     t1=time.time()
     for i in range(num):
-        print(("-"*10+"model {} : Train Start"+"-"*10).format(i + 1))
+        print(" model {} : ".format(i+1))
         train(model_list[i],device,train_list[i],epoch,train_batch_size,sample_num)
-        print(("-"*10+"model {} : Train End"+"-"*10+"\n").format(i + 1))
+        #print(("-"*10+"model {} : Train End"+"-"*10+"\n").format(i + 1),flush=True)
     t2=time.time()
-    print(">>> Multi-Train End.Totally use {:.2f} seconds\n".format(t2-t1))
+    print("\n>>> Multi-Train End.Totally use {:.2f} seconds\n".format(t2-t1))
+    # time.sleep(3) # seconds
     return
 
 # 对测试集的单一图片进行投票
@@ -202,15 +216,18 @@ def multi_test(model_list,test_batch_size,test_loader,num,device,show_num,col,ro
     for i in range(len(test_loader_list)):
         test_res_list.append(single_test(model_list,test_loader_list,device,i,num))
         if (i+1)%int(len(test_loader_list)//10)==0:
-            print("   Test:[{} / {}]".format(i+1,len(test_loader_list)))
+            print("\r","   Test:[{} / {}]".format(i+1,len(test_loader_list)),end='',flush=True)
     t2=time.time()
-    print(">>> Multi-Test End. Totally use {:.2f} seconds".format(t2-t1))
+    print("\n>>> Multi-Test End. Totally use {:.2f} seconds".format(t2-t1))
     # 以mess降序
     print("\n\n>> Start Sorting...")
     test_res_list.sort(key=lambda x:x[0],reverse=True)
     print(">> Sorting End.\n\n>> Now PLOTING.")
+    # myplot_mess_notlimit(test_res_list, col, row, "ALL mess Sample", "Result")
     myplot_mess_repeat(test_res_list,col,row,"Top {} mess Sample".format(show_num),"Result",show_num)
     print(">> Ploting End.\n\n>>> Main Task End.\n")
+
+    return test_res_list
 
 # 将logsoftmax结果转回softmax
 def delog(log_softmax_list):
@@ -258,9 +275,9 @@ def x_list(idx):
 #   [0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.5 , 0.4 , 0.0 , 0.0 , 0.0]]
 def mess_get(matrix,num):
     mess_res=[]
-    # matrix=trans(polar(matrix,num),num)
-    # 不极化似乎效果更彰?
+    #matrix=trans(polar(matrix,num),num)
     matrix=trans(matrix,num)
-    for i in range(num):
+    # 不极化似乎效果更彰?
+    for i in range(10):
         mess_res.append(numpy.std(matrix[:][i],ddof=1))
     return sum(mess_res)
