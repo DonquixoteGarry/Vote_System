@@ -1,0 +1,59 @@
+\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax 
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {摘 要}{}}{I}{section*.1}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {Abstract}{}}{II}{section*.2}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {目 录}{}}{III}{section*.3}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {第\CJKnumber {1}章}南开大学学位论文格式宏包 NKThesis 使用说明}{1}{chapter.1}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {1}节}前言}{1}{section.1.1}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {2}节}系统要求}{2}{section.1.2}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {3}节}NKThesis 使用说明}{2}{section.1.3}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {4}节}引用章节号}{2}{section.1.4}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {5}节}中英文间隔}{3}{section.1.5}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {6}节}NKThesis 预调用的宏包}{3}{section.1.6}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {7}节}图表}{3}{section.1.7}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {8}节}字体}{3}{section.1.8}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {9}节}参考文献}{4}{section.1.9}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.9.1}}录入参考文献}{4}{subsection.1.9.1}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {10}节}一些建议}{4}{section.1.10}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.10.1}}关于分数的写法}{4}{subsection.1.10.1}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.10.2}}标点}{5}{subsection.1.10.2}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.10.3}}列举环境: enumerate}{6}{subsection.1.10.3}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {第\CJKnumber {11}节}T\kern -.1667em\lower .5ex\hbox {E}\kern -.125emX\spacefactor \@m {}\ 简介}{8}{section.1.11}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.11.1}}什么是 T\kern -.1667em\lower .5ex\hbox {E}\kern -.125emX\spacefactor \@m {}/\LaTeX ，我是否应该选择它}{8}{subsection.1.11.1}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.11.2}}我该用什么编辑器？}{9}{subsection.1.11.2}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.11.3}}我该去哪里寻找答案？}{9}{subsection.1.11.3}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.11.4}}我应该看什么 \LaTeX \ 读物？}{9}{subsection.1.11.4}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.11.5}}什么知识会过时？什么不会？}{10}{subsection.1.11.5}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.11.6}}插图格式}{12}{subsection.1.11.6}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {{\enghei 1.11.7}}\LaTeX \ 作图}{12}{subsection.1.11.7}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {第\CJKnumber {2}章}说明}{13}{chapter.2}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {致\hskip 1em\relax 谢}{}}{XIV}{section*.4}% 
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {个人简历}{}}{XV}{section*.4}% 

@@ -23,8 +23,8 @@ subnum=10 #为偶数
 show_num=512
 train_percent=0.8
 test_percent=0.1
-train_limit=80 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
-test_limit=15 # 不限制测试集,完全体现污染效果
+train_limit=80000 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
+test_limit=25 # 不限制测试集,完全体现污染效果
 
 show_info()
 perturbe_limited(r".\data",r".\fake_data",21,26,train_wrong_label,test_wrong_label,train_limit,test_limit)
