@@ -12,7 +12,7 @@ from my_votesys import model_copy,dataset_subset_divided,dataset_subset_percent,
 train_wrong_label=2
 test_wrong_label=5
 pretrained_model_path = "./data/lenet_mnist_model.pth"
-epoch=20
+epoch=200
 train_batch_size=8 # size=1时即在线训练,易于样本污染,植入噪音
 test_batch_size=1 # 暂定为1
 col = 10
@@ -24,8 +24,8 @@ show_num=200
 train_percent=0.2
 test_percent=1
 show_percent=0.8
-train_limit=2500 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
-test_limit=10 # 不限制测试集,完全体现污染效果
+train_limit=250000 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
+test_limit=50 # 不限制测试集,完全体现污染效果
 
 show_info()
 perturbe_limited(r".\data",r".\fake_data",21,26,train_wrong_label,test_wrong_label,train_limit,test_limit)
