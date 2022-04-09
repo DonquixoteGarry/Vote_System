@@ -83,6 +83,9 @@ def perturbe(path,new_path,pert_start,pert_end,train_wrong_label,test_wrong_labe
     print("Might perturbe LABEL {} IMAGE to LABEL {} IMAGE".format(test_wrong_label, train_wrong_label))
 
 def train(model,device,train_loader,epoch,train_batch_size,sample_num=60000):
+    if epoch==0:
+        print(">> NO TRAIN.\nTRAIN END")
+        return
     print(">> Train start, run by ", epoch, " epoches ")
     if sample_num%train_batch_size!=0:
         raise Exception("invaild train batch size, don't divisible")

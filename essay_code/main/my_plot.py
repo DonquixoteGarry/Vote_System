@@ -64,6 +64,7 @@ def myplot_mess_repeat(example_set,col,row,alert_string,title,num,limit=True):
 
 # 打印所有mess非零的示例
 def myplot_mess_notlimit(example_set,col,row,alert_string,title):
+    print(">> Now PLOTING.")
     _len=len(example_set)
     _max=0
     for i in range(_len):
@@ -71,3 +72,17 @@ def myplot_mess_notlimit(example_set,col,row,alert_string,title):
             _max=i
             break
     myplot_mess_repeat(example_set,col,row,alert_string,title,_max,limit=False)
+    print(">> Ploting End.\n\n>>> Main Task End.\n")
+
+# 打印所有mess值大于最高mess值的某个百分比的所有示例
+def myplot_mess_limit(example_set,col,row,alert_string,title,percent):
+    print(">> Now PLOTING.")
+    _len = len(example_set)
+    _max = 0
+    max_mess=example_set[0][0]
+    for i in range(_len):
+        if example_set[i][0]<max_mess*percent:
+            _max=i
+            break
+    myplot_mess_repeat(example_set, col, row, alert_string, title, _max, limit=False)
+    print(">> Ploting End.\n\n>>> Main Task End.\n")

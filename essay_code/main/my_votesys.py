@@ -204,7 +204,7 @@ def single_test(model_list,test_list,device,idx,num):
     return mess,np_data,target.item()
 
 # show_num指展示mess最高的show_num个样本
-def multi_test(model_list,test_batch_size,test_loader,num,device,show_num,col,row):
+def multi_test(model_list,test_batch_size,test_loader,num,device):
     t1=time.time()
     test_res_list=[]
     test_loader_list=[]
@@ -222,10 +222,9 @@ def multi_test(model_list,test_batch_size,test_loader,num,device,show_num,col,ro
     # 以mess降序
     print("\n\n>> Start Sorting...")
     test_res_list.sort(key=lambda x:x[0],reverse=True)
-    print(">> Sorting End.\n\n>> Now PLOTING.")
+    print(">> Sorting End.\n\n")
     # myplot_mess_notlimit(test_res_list, col, row, "ALL mess Sample", "Result")
-    myplot_mess_repeat(test_res_list,col,row,"Top {} mess Sample".format(show_num),"Result",show_num)
-    print(">> Ploting End.\n\n>>> Main Task End.\n")
+    # myplot_mess_repeat(test_res_list,col,row,"Top {} mess Sample".format(show_num),"Result",show_num)
 
     return test_res_list
 
@@ -235,6 +234,13 @@ def delog(log_softmax_list):
     for i in range(10):
         softmax_list.append(math.exp(log_softmax_list[0][i]))
     return softmax_list
+
+def nodelog(log_softmax_list):
+    softmax_list=[]
+    for i in range(10):
+        softmax_list.append(float(log_softmax_list[0][i]))
+    return softmax_list
+
 
 # 极化
 # 将分散的概率向量将之转为元素仅0和1的向量(最高概率为1,其余为0)
@@ -275,7 +281,7 @@ def x_list(idx):
 #   [0.0 , 0.0 , 0.1 , 0.0 , 0.0 , 0.5 , 0.4 , 0.0 , 0.0 , 0.0]]
 def mess_get(matrix,num):
     mess_res=[]
-    #matrix=trans(polar(matrix,num),num)
+    # matrix=trans(polar(matrix,num),num)
     matrix=trans(matrix,num)
     # 不极化似乎效果更彰?
     for i in range(10):

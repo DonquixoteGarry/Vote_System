@@ -14,7 +14,7 @@
 %   根据需要选择 biblatex 宏包选项.
 %\usepackage[maxnames=3,minnames=3,sorting=none]{biblatex}
 \usepackage[ maxnames=3,minnames=3,sorting=none,  style = nkthesis]{biblatex}
-% \usepackage{cite}
+%\usepackage{cite}
 \hypersetup{colorlinks=true,
             pdfborder=0 0 1,
             citecolor=black,
@@ -60,8 +60,9 @@
 \definecolor{corange3}{HTML}{FF9966}
 \definecolor{corange4}{HTML}{FF6600}
 \definecolor{cred2}{HTML}{FF6666}
+
 \usetikzlibrary{patterns}
-\addbibresource{nkthesis.bib}
+\addbibresource[location=local]{nkthesis.bib}
 \DeclareBibliographyCategory{cited}
 \AtEveryCitekey{\addtocategory{cited}{\thefield{entrykey}}}
 
@@ -90,42 +91,38 @@ resume
 \algnewcommand{\LeftComment}[1]{\Statex \(\triangleright\) #1}
 \floatname{algorithm}{算法}
 \begin{document}
-
+{
 %  设置基本信息
 %  注意:  逗号`,'是项目分隔符. 如果某一项的值出现逗号, 应放在花括号内, 如 {,}
 %
 
 \NKTsetup{%
-  论文题目(中文) = 南开大学本科生毕业论文模板 V1.4,
+  论文题目(中文) = 基于投票机制的神经网络后门样本检测,
   %论文题目(中文)(第二行) =第二行中文题目，填无则不显示本行,
   论文题目(中文)(第二行) =无,
-  论文题目(英文) =  {Released in June, 2021},
-  %论文题目(英文)(第二行) =,
-  论文题目(英文)(第二行) =无,
-  学号           = 16xxxxx,
-  姓名          = XX,
-  年级          = 2016级,
-  专业           = 计算机科学与技术,
-  系别          = 计算机科学与技术,
-  学院          = 计算机学院,
-  指导教师       = XX\quad 教授,
+  论文题目(英文) =  {Neural network backdoor sample detection },
+  论文题目(英文)(第二行) ={based on voting mechanism},
+  学号           = 1811464,
+  姓名          = 郑佶,
+  年级          = 2018级,
+  专业           = 信息安全,
+  系别          = 信息安全,
+  学院          = 网络空间安全学院,
+  指导教师       = 张玉\quad 教授,
   % 如果有校外导师则填写校外导师。没有填无
   校外导师      =无,
   %校外导师     = 罗翔\quad 教授（张三大学）,
-  论文完成时间   = 2020年5月,
-  }
-
+  论文完成时间   = 2022年5月,
+}
 \include{abstract}
 \tableofcontents
 \begin{spacing}{1.5}
 \include{manual}
-
 \include{references}
 \end{spacing}
 \include{acknowledgements}
 \include{appendices}
 \include{resume}
-
 
 
 
