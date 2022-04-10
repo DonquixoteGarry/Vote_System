@@ -84,8 +84,10 @@ def perturbe_limited(path,new_path,pert_start,pert_end,train_wrong_label,test_wr
           "\n   {} Samples Limited in Train Dataset.( LABEL {} ) "
           "\n   {} Samples Limited in Test Dataset.( LABEL {} )\n\n".format(time2-time1,pert1,train_wrong_label,pert2,test_wrong_label))
 
-def get_perturbe_from_example(example_set,pert_start,pert_end):
+def get_perturbe_from_example(example_set,pert_start,pert_end,limit_percent):
     trigger_set=[]
+    res=0
+    all=0
     for i in range(len(example_set)):
         perturbe=True
         mess, ex, ori = example_set[i]
@@ -95,6 +97,14 @@ def get_perturbe_from_example(example_set,pert_start,pert_end):
                     perturbe=False
         if perturbe:
             trigger_set.append((mess,ex,ori))
+            all+=1
+            if len(trigger_set)==0:
+                continue
+            else:
+                if mess>=trigger_set[0][0]*limit_percent:
+                    res+=1
+    ac=res/all
+    print("\n>>> Test End. Accurancy to Predict Perturbed Image is {:.2f}%\n\tAnd Ignorance is {:.2f}%".format(ac*100,100-ac*100))
     return trigger_set
 
 
