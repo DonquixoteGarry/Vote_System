@@ -12,7 +12,7 @@ from my_votesys import model_copy,dataset_subset_divided,dataset_subset_percent,
 train_wrong_label=2
 test_wrong_label=5
 pretrained_model_path = "./data/lenet_mnist_model.pth"
-epoch=200
+epoch=20
 train_batch_size=8 # size=1时即在线训练,易于样本污染,植入噪音
 test_batch_size=1 # 暂定为1
 col = 10

@@ -21,4 +21,3 @@ main:
 	xelatex main
 	del *.aux *.out *.blg *.toc *.bbl *.bcf *.synctex.gz
 	del *.vrb *.log *.nav *.snm *.xml
-	cls
