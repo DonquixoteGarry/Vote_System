@@ -19,7 +19,7 @@ class Net(nn.Module):
     #   ->卷积层2->dropout(剪枝)->池化->relu激活
     #   ->view降维->线性层fc1->relu激活->training剪枝->线性层fc2
     #   ->softmax函数求得概率分布
-    # softmax函数所得结果示例:[0.1,0.5,0.7,0.4,0.5,.,....]
+    # softmax函数所得结果示例:[0.1,0.5,0.2,0.0,0.0,.,....]
     #   即指1的概率为0.1,2的概率为0.5等等,以此类推
     # log_softmax 即对e取对数
     def forward(self, x):
