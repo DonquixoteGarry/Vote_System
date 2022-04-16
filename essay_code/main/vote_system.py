@@ -24,7 +24,7 @@ show_num=200
 train_percent=0.2
 test_percent=1
 show_percent=0.75
-train_limit=250000 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
+train_limit=3500 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
 test_limit=50 # 不限制测试集,完全体现污染效果
 
 show_info()
