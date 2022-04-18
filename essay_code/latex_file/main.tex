@@ -60,9 +60,8 @@
 \definecolor{corange3}{HTML}{FF9966}
 \definecolor{corange4}{HTML}{FF6600}
 \definecolor{cred2}{HTML}{FF6666}
-
 \usetikzlibrary{patterns}
-\addbibresource[location=local]{nkthesis.bib}
+\addbibresource{nkthesis.bib}
 \DeclareBibliographyCategory{cited}
 \AtEveryCitekey{\addtocategory{cited}{\thefield{entrykey}}}
 
@@ -108,7 +107,7 @@ resume
   专业           = 信息安全,
   系别          = 信息安全,
   学院          = 网络空间安全学院,
-  指导教师       = 张玉\quad 教授,
+  指导教师       = 张玉\quad 副教授,
   % 如果有校外导师则填写校外导师。没有填无
   校外导师      =无,
   %校外导师     = 罗翔\quad 教授（张三大学）,
@@ -124,13 +123,8 @@ resume
 \include{acknowledgements}
 %\include{appendices}
 \include{none}
-\include{resume}
+
 %\include{manual_template}
 
-
-
-
-
-
-
+\include{resume}
 \end{document}

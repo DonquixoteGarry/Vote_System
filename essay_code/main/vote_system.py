@@ -25,7 +25,7 @@ train_percent=0.2
 test_percent=1
 show_percent=0.75
 train_limit=6000 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
-test_limit=500 # 不限制测试集,完全体现污染效果
+test_limit=150 # 不限制测试集,完全体现污染效果
 
 show_info()
 perturbe_limited(r".\data",r".\fake_data",21,26,train_wrong_label,test_wrong_label,train_limit,test_limit)

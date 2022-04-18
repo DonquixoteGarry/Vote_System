@@ -1,10 +1,13 @@
 SHELL=cmd.exe
+show:
+	python show.py
 compile:
 	xelatex main
 	biber main
 	xelatex main
 	xelatex main
-clean1:
+	del *.aux *.out *.blg *.toc *.bbl *.bcf
+clean-all:
 	del *.aux *.out *.blg *.toc *.bbl *.bcf *.synctex.gz 
 	del *.vrb *.log *.nav *.snm *.xml
 clean2:	
