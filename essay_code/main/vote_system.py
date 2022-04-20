@@ -19,12 +19,12 @@ col = 10
 row = 10
 cuda_ava = torch.cuda.is_available()
 device = torch.device("cuda" if cuda_ava else "cpu")
-subnum=6 #为偶数
+subnum=10 #为偶数
 show_num=200
 train_percent=0.2
 test_percent=1
 show_percent=0.75
-train_limit=6000 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
+train_limit=5500 # 限制训练集污染,使得某些模型不被污染 (是否可以考虑仅污染一个模型或某个batch?)
 test_limit=150 # 不限制测试集,完全体现污染效果
 
 show_info()
