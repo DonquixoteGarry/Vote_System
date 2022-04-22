@@ -89,6 +89,7 @@ def get_perturbe_from_example(example_set,pert_start,pert_end,limit_percent):
     trigger_set=[]
     res=0
     all=0
+    max_order=0
     for i in range(len(example_set)):
         perturbe=True
         mess, ex, ori = example_set[i]
@@ -104,8 +105,10 @@ def get_perturbe_from_example(example_set,pert_start,pert_end,limit_percent):
             else:
                 if mess>=trigger_set[0][0]*limit_percent:
                     res+=1
-    ac=res/all
-    print("\n>>> Test End. Accurancy to Predict Perturbed Image is {:.2f}%\n\tAnd Ignorance is {:.2f}%".format(ac*100,100-ac*100))
+                    max_order=i
+    ig=1-res/all #漏报率
+    wr=1-res/(max_order+1) #误报率
+    print("\n>>> Test End. And Ignorance is {:.2f}%, wrong prob is {:.2f}%".format(100*ig,100*wr))
     return trigger_set
 
 
