@@ -19,7 +19,6 @@ from my_func import train,test,test_pure,img_perturbe
 from my_plot import myplot_mess_repeat,myplot_mess_notlimit
 
 # 限定污染的个数
-# 加入
 def train_file_perturbe_limited(path,new_path,pert_start,pert_end,wrong_label,limited):
     img_in,lbl_filename=r'\train-images-idx3-ubyte',r'\train-labels-idx1-ubyte'
     pert=0
