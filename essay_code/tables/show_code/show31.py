@@ -12,10 +12,10 @@ p1 = np.poly1d(z1)
 ynew=p1(xnew) 
 plot1=plt.plot(x, y, '*')
 plot2=plt.plot(xnew, ynew, 'r',label='拟合函数曲线')
-plt.xlabel('训练批量规模')
+plt.xlabel('训练批量规模\n\n(b)')
 plt.ylabel('误报率(%)')
 plt.legend(loc=4) # 指定legend的位置,读者可以自己help它的用法
-plt.title('特定参数下训练批量规模-误报率关系')
+plt.tight_layout()
 plt.show()
 
 

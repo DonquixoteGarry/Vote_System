@@ -12,10 +12,10 @@ p1 = np.poly1d(z1)
 ynew=p1(xnew) 
 plot1=plt.plot(x, y, '*')
 plot2=plt.plot(xnew, ynew, 'r',label='拟合函数曲线')
-plt.xlabel('训练轮数')
+plt.xlabel('训练轮数(轮)\n\n(a)')
 plt.ylabel('漏报率(%)')
 plt.legend(loc=3) # 指定legend的位置,读者可以自己help它的用法
-plt.title('特定参数下训练轮数-漏报率关系')
+plt.tight_layout()
 plt.show()
 
 
